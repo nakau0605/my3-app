@@ -69,7 +69,7 @@ export const THEME_LIST = Object.values(THEMES);
  * 運営者のデフォルトAmazonアソシエイトID
  * 仕様書: ユーザーが空欄にした場合、システム側で自動付与して運営収益に変換
  */
-export const DEFAULT_PLATFORM_AFFILIATE_TAG = 'my5official-22';
+export const DEFAULT_PLATFORM_AFFILIATE_TAG = 'nakauyusuke06-22';
 
 /**
  * Amazon URLにアフィリエイトタグを付与・補完する関数
