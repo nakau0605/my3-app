@@ -1,0 +1,526 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700;900&family=Kaisei+Decol:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
+/* Google Fonts Icons (Material Symbols) Helper */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+:root {
+  /* Apple HIG System Colors & irop.jp Vibrant Palette */
+  --color-blue: #4B7BEC;
+  --color-blue-light: #EEF3FE;
+  --color-blue-deep: #2F55A4;
+
+  --color-coral: #E85A71;
+  --color-coral-light: #FDEEF0;
+  --color-coral-deep: #D03F57;
+
+  --color-camel: #B87B44;
+  --color-camel-light: #FAF2EB;
+  --color-camel-deep: #97602F;
+
+  --color-lavender: #8E7CC3;
+  --color-lavender-light: #F3EFFB;
+
+  --color-mint: #2ECC71;
+  --color-mint-light: #EBF9F1;
+
+  --color-yellow: #F7B731;
+  --color-yellow-light: #FEF9EB;
+
+  /* Neutral Backgrounds (Apple HIG Clarity & Brightness) */
+  --bg-main: #FFFFFF;
+  --bg-subtle: #F7F8FC;
+  --bg-card: #FFFFFF;
+  --bg-float: rgba(255, 255, 255, 0.88);
+  --border-light: rgba(0, 0, 0, 0.07);
+  --border-card: #EAECEF;
+
+  /* Text & Contrast (Apple Accessibility HIG) */
+  --text-primary: #1C1C1E;
+  --text-secondary: #48484A;
+  --text-muted: #8E8E93;
+  --text-inverse: #FFFFFF;
+
+  /* Apple HIG Continuous Corner Radii */
+  --radius-xs: 8px;
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --radius-pill: 9999px;
+  --radius-oval: 120px;
+
+  /* Shadows (Apple Fluid Layering) */
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.09);
+  --shadow-float: 0 12px 32px rgba(75, 123, 236, 0.18);
+  --shadow-card-hover: 0 18px 40px rgba(0, 0, 0, 0.12);
+
+  /* Typography */
+  --font-sans: 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif;
+  --font-en: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-serif: 'Shippori Mincho', serif;
+}
+
+/* Base Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background-color: var(--bg-main);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), opacity 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+input, textarea, select {
+  font-family: inherit;
+  color: inherit;
+  outline: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F2F4F8;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD2DE;
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9AA5B8;
+}
+
+/* Containers */
+.container {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.container-narrow {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Vertical Text for Japanese Editorial (irop-style) */
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0.35em;
+  line-height: 1.8;
+  font-weight: 700;
+}
+
+/* Organic Wave & Curve Dividers */
+.section-wave-top {
+  position: relative;
+  overflow: hidden;
+}
+.section-wave-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* Buttons adhering to Apple Touch Target (>= 44px) */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--color-blue);
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(75, 123, 236, 0.35);
+}
+.btn-primary:hover {
+  background: var(--color-blue-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(75, 123, 236, 0.45);
+}
+
+.btn-coral {
+  background: var(--color-coral);
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(232, 90, 113, 0.35);
+}
+.btn-coral:hover {
+  background: var(--color-coral-deep);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+  box-shadow: var(--shadow-sm);
+}
+.btn-secondary:hover {
+  background: var(--bg-subtle);
+  border-color: #CBD2DE;
+  transform: translateY(-1px);
+}
+
+.btn-amazon {
+  background: #FF9900;
+  color: #111827;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(255, 153, 0, 0.28);
+}
+.btn-amazon:hover {
+  background: #E68A00;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 153, 0, 0.38);
+}
+
+.btn-sm {
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.btn-lg {
+  min-height: 54px;
+  padding: 16px 36px;
+  font-size: 1.05rem;
+}
+
+/* Card Surface with Apple Squircle & Soft Floating Depth */
+.card-apple {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-apple:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-4px);
+}
+
+/* Oval / Capsule Frame (irop.jp style) */
+.frame-oval {
+  border-radius: 9999px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1.35;
+  background-color: #F0F3FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.badge-pro {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.badge-tag {
+  background: var(--color-blue-light);
+  color: var(--color-blue);
+  font-weight: 700;
+}
+
+/* Section Headings in irop.jp style */
+.section-header-en {
+  font-family: var(--font-en);
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.section-header-jp {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+}
+
+/* Numbers like irop ranking */
+.ranking-number-badge {
+  width: 32px;
+  height: 32px;
+  background-color: #1C1C1E;
+  color: #FFFFFF;
+  font-family: var(--font-en);
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* =========================================================================
+   THEME STYLES (Apple HIG & irop.jp Bright Editions)
+   ========================================================================= */
+
+.theme-minimal {
+  --theme-bg: #FFFFFF;
+  --theme-card-bg: #FFFFFF;
+  --theme-text-primary: #1C1C1E;
+  --theme-text-secondary: #48484A;
+  --theme-card-border: #EAECEF;
+  --theme-accent: #4B7BEC;
+  --theme-badge-bg: #EEF3FE;
+  --theme-badge-text: #4B7BEC;
+}
+
+.theme-magazine {
+  --theme-bg: #FAF7F2;
+  --theme-card-bg: #FFFFFF;
+  --theme-text-primary: #2C2623;
+  --theme-text-secondary: #5C544E;
+  --theme-card-border: #E8E2D8;
+  --theme-accent: #B87B44;
+  --theme-badge-bg: #FAF2EB;
+  --theme-badge-text: #B87B44;
+  font-family: var(--font-serif);
+}
+
+.theme-polaroid {
+  --theme-bg: #F8F5EE;
+  --theme-card-bg: #FFFFFF;
+  --theme-text-primary: #292524;
+  --theme-text-secondary: #78716C;
+  --theme-card-border: #E2DAC8;
+  --theme-accent: #E85A71;
+  --theme-badge-bg: #FDEEF0;
+  --theme-badge-text: #E85A71;
+}
+
+.theme-neopop {
+  --theme-bg: #FEF9EB;
+  --theme-card-bg: #FFFFFF;
+  --theme-text-primary: #1C1C1E;
+  --theme-text-secondary: #334155;
+  --theme-card-border: #1C1C1E;
+  --theme-accent: #8E7CC3;
+  --theme-badge-bg: #F3EFFB;
+  --theme-badge-text: #8E7CC3;
+}
+
+.theme-craft {
+  --theme-bg: #F3EFEA;
+  --theme-card-bg: #FAF7F2;
+  --theme-text-primary: #2A2623;
+  --theme-text-secondary: #57524E;
+  --theme-card-border: #DCD4C7;
+  --theme-accent: #2ECC71;
+  --theme-badge-bg: #EBF9F1;
+  --theme-badge-text: #2ECC71;
+}
+
+.theme-dark {
+  --theme-bg: #121826;
+  --theme-card-bg: #1A2234;
+  --theme-text-primary: #FFFFFF;
+  --theme-text-secondary: #94A3B8;
+  --theme-card-border: rgba(255, 255, 255, 0.1);
+  --theme-accent: #38BDF8;
+  --theme-badge-bg: rgba(56, 189, 248, 0.15);
+  --theme-badge-text: #38BDF8;
+}
+
+/* =========================================================================
+   MOBILE & RESPONSIVE OPTIMIZATIONS (Apple HIG touch standards)
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  /* Show bottom navigation bar */
+  .mobile-bottom-bar {
+    display: block !important;
+  }
+
+  /* Add padding to body so bottom bar does not cover content or footer */
+  body {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 16px)) !important;
+  }
+
+  /* Touch Targets: minimum 44px for accessible tapping */
+  .btn {
+    min-height: 44px;
+    padding: 10px 20px;
+  }
+
+  .btn-sm {
+    min-height: 40px;
+    padding: 8px 16px;
+  }
+
+  /* Hero grid responsive layout */
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+
+  /* Vertical text in Hero switches to dynamic badge/horizontal layout on mobile */
+  .vertical-text {
+    writing-mode: horizontal-tb !important;
+    height: auto !important;
+    text-align: center !important;
+    font-size: 1.25rem !important;
+    margin-bottom: 8px;
+    line-height: 1.4 !important;
+  }
+
+  /* About grid responsive */
+  .about-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px !important;
+  }
+
+  /* Container padding for mobile */
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* Mobile scroll containers */
+  .mobile-scroll-x {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 14px;
+    padding-bottom: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-scroll-x > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Section header sizing */
+  .section-header-en {
+    font-size: 1.75rem;
+  }
+
+  /* Navigation responsive */
+  .nav-desktop-links {
+    display: none !important;
+  }
+
+  .nav-btn-text {
+    display: none !important;
+  }
+
+  /* Hide desktop-only nav elements */
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+html {
+  scroll-padding-top: 84px;
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
