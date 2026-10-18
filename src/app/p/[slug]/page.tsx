@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { 
   Sparkles, 
@@ -16,24 +16,68 @@ import {
 } from 'lucide-react';
 import { MOCK_PAGES } from '@/data/mockData';
 import { THEMES, THEME_LIST } from '@/themes';
-import { ThemeId } from '@/types';
+import { ThemeId, My5Item } from '@/types';
 import ItemCard from '@/components/ItemCard';
 import CollageOGPModal from '@/components/CollageOGPModal';
 import ReportModal from '@/components/ReportModal';
 import ProModal from '@/components/ProModal';
 import Icon from '@/components/Icon';
+import { fetchMy3PageBySlug, incrementPageViews } from '@/lib/supabase';
 
 export default function UserMy5Page({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
-  const foundPage = MOCK_PAGES.find(p => p.slug === resolvedParams.slug) || MOCK_PAGES[0];
+  const fallbackPage = MOCK_PAGES.find(p => p.slug === resolvedParams.slug) || MOCK_PAGES[0];
 
-  const [activeTheme, setActiveTheme] = useState<ThemeId>(foundPage.themeId);
+  const [dbData, setDbData] = useState<{ page: any; items: any[] } | null>(null);
+  const [activeTheme, setActiveTheme] = useState<ThemeId>(fallbackPage.themeId);
   const [showOgpModal, setShowOgpModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
 
-  const customBg = foundPage.customColors?.backgroundColor;
-  const customCard = foundPage.customColors?.cardColor;
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        const result = await fetchMy3PageBySlug(resolvedParams.slug);
+        if (isMounted && result) {
+          setDbData(result);
+          if (result.page.theme_id && THEMES[result.page.theme_id as ThemeId]) {
+            setActiveTheme(result.page.theme_id as ThemeId);
+          }
+          incrementPageViews(resolvedParams.slug);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadData();
+    return () => { isMounted = false; };
+  }, [resolvedParams.slug]);
+
+  // DBデータがあればDBから、無ければフォールバックモックデータ
+  const pageTitle = dbData?.page ? dbData.page.title : fallbackPage.title;
+  const pageDescription = dbData?.page ? dbData.page.description : fallbackPage.description;
+  const pageCategory = dbData?.page ? dbData.page.category : fallbackPage.category;
+  const authorName = dbData?.page ? dbData.page.author_name : fallbackPage.author.name;
+  const authorAvatar = dbData?.page ? dbData.page.author_avatar : fallbackPage.author.avatarUrl;
+  const isPro = dbData?.page ? dbData.page.is_pro : fallbackPage.author.isPro;
+  const viewsCount = dbData?.page ? (dbData.page.views || 0) : fallbackPage.views;
+  const clicksCount = dbData?.page ? (dbData.page.clicks || 0) : fallbackPage.clicks;
+  const customBg = dbData?.page?.bg_color || fallbackPage.customColors?.backgroundColor;
+  const customCard = dbData?.page?.card_color || fallbackPage.customColors?.cardColor;
+
+  const displayItems: My5Item[] = dbData?.items && dbData.items.length > 0
+    ? dbData.items.map((it, idx) => ({
+        id: it.id || `item-${idx}`,
+        name: it.name,
+        comment: it.comment,
+        imageUrl: it.image_url,
+        amazonUrl: it.amazon_url,
+        asin: it.asin || '',
+        category: it.category || 'セレクト',
+        affiliateTag: dbData.page.affiliate_tag,
+      }))
+    : fallbackPage.items;
 
   return (
     <div 
@@ -170,18 +214,18 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
               height: '92px',
               borderRadius: '50%',
               padding: '3px',
-              background: foundPage.author.isPro 
+              background: isPro 
                 ? 'linear-gradient(135deg, #4B7BEC 0%, #E85A71 100%)' 
                 : '#EAECEF',
-              boxShadow: foundPage.author.isPro ? '0 6px 20px rgba(75, 123, 236, 0.25)' : 'none',
+              boxShadow: isPro ? '0 6px 20px rgba(75, 123, 236, 0.25)' : 'none',
             }}>
               <img
-                src={foundPage.author.avatarUrl}
-                alt={foundPage.author.name}
+                src={authorAvatar}
+                alt={authorName}
                 style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
               />
             </div>
-            {foundPage.author.isPro && (
+            {isPro && (
               <div style={{
                 position: 'absolute',
                 bottom: 0,
@@ -204,10 +248,10 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
           {/* Author Name */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: 900, color: '#1C1C1E', margin: 0 }}>
-              {foundPage.author.name}
+              {authorName}
             </h2>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              @{foundPage.author.handle}
+              @{resolvedParams.slug}
             </span>
           </div>
 
@@ -218,19 +262,19 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
             lineHeight: 1.65,
             marginBottom: '16px',
           }}>
-            {foundPage.author.bio}
+            {pageDescription}
           </p>
 
           {/* Category & Stats */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <span className="badge badge-tag" style={{ fontSize: '0.75rem' }}>
-              {foundPage.category}
+              {pageCategory}
             </span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Eye size={14} /> {foundPage.views.toLocaleString()} views
+              <Eye size={14} /> {viewsCount.toLocaleString()} views
             </span>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <MousePointerClick size={14} /> {foundPage.clicks.toLocaleString()} clicks
+              <MousePointerClick size={14} /> {clicksCount.toLocaleString()} clicks
             </span>
           </div>
         </header>
@@ -264,7 +308,7 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
             color: customCard === '#1F2937' ? '#FFFFFF' : '#1C1C1E',
             marginBottom: '10px',
           }}>
-            {foundPage.title}
+            {pageTitle}
           </h1>
           <p style={{
             fontSize: '0.92rem',
@@ -273,26 +317,26 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
             maxWidth: '560px',
             margin: '0 auto',
           }}>
-            {foundPage.description}
+            {pageDescription}
           </p>
         </div>
 
         {/* The 3 Items List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {foundPage.items.slice(0, 3).map((item, index) => (
+          {displayItems.slice(0, 3).map((item, index) => (
             <ItemCard
               key={item.id}
               item={item}
               index={index}
               themeId={activeTheme}
-              authorIsPro={foundPage.author.isPro}
+              authorIsPro={isPro}
               cardColor={customCard}
             />
           ))}
         </div>
 
         {/* Banner Ad Section (Only for Free Plan) */}
-        {!foundPage.author.isPro && (
+        {!isPro && (
           <div style={{
             marginTop: '40px',
             padding: '24px',
@@ -367,14 +411,26 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
       {/* Modals */}
       {showOgpModal && (
         <CollageOGPModal
-          pageData={foundPage}
+          pageData={{
+            ...fallbackPage,
+            title: pageTitle,
+            description: pageDescription,
+            category: pageCategory,
+            items: displayItems,
+            author: {
+              ...fallbackPage.author,
+              name: authorName,
+              avatarUrl: authorAvatar,
+              isPro: isPro,
+            }
+          }}
           onClose={() => setShowOgpModal(false)}
         />
       )}
 
       {showReportModal && (
         <ReportModal
-          pageTitle={foundPage.title}
+          pageTitle={pageTitle}
           onClose={() => setShowReportModal(false)}
         />
       )}

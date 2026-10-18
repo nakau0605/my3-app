@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Sparkles, 
@@ -24,13 +24,69 @@ import {
 } from 'lucide-react';
 import { MOCK_PAGES } from '@/data/mockData';
 import { THEMES } from '@/themes';
+import { My5PageData, ThemeId } from '@/types';
 import ProModal from '@/components/ProModal';
 import Icon from '@/components/Icon';
+import { fetchRecentMy3Pages } from '@/lib/supabase';
 
 export default function HomePage() {
   const [showProModal, setShowProModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('すべて');
+  const [dbPages, setDbPages] = useState<My5PageData[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadPages() {
+      try {
+        const pages = await fetchRecentMy3Pages(20);
+        if (isMounted && pages.length > 0) {
+          const mapped: My5PageData[] = pages.map((p) => {
+            const validTheme: ThemeId = (p.theme_id && THEMES[p.theme_id as ThemeId])
+              ? (p.theme_id as ThemeId)
+              : 'minimal';
+
+            return {
+              id: p.id,
+              slug: p.slug,
+              title: p.title,
+              description: p.description || '',
+              category: p.category || '総合',
+              themeId: validTheme,
+              views: p.views || 0,
+              clicks: p.clicks || 0,
+              createdAt: p.created_at,
+              customColors: {
+                backgroundColor: p.bg_color,
+                cardColor: p.card_color,
+              },
+              author: {
+                name: p.author_name || 'クリエイター',
+                handle: p.slug,
+                avatarUrl: p.author_avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+                bio: p.description || '',
+                isPro: p.is_pro || false,
+              },
+              items: (p.items || []).map((it, idx) => ({
+                id: it.id || `item-${idx}`,
+                name: it.name,
+                comment: it.comment || '',
+                imageUrl: it.image_url,
+                amazonUrl: it.amazon_url,
+                asin: it.asin || '',
+                category: it.category || 'セレクト',
+              })),
+            };
+          });
+          setDbPages(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load recent pages from Supabase', err);
+      }
+    }
+    loadPages();
+    return () => { isMounted = false; };
+  }, []);
 
   const categories = [
     'すべて',
@@ -46,11 +102,17 @@ export default function HomePage() {
     '健康 & ワーク',
   ];
 
+  // DBの新規投稿とモックデータをマージ（DBの最新投稿が一番上に表示される）
+  const combinedPages = [
+    ...dbPages,
+    ...MOCK_PAGES.filter(mp => !dbPages.some(dp => dp.slug === mp.slug)),
+  ];
+
   // 編集部厳選の「注目のMY 3」（トップ4件）
-  const featuredPages = MOCK_PAGES.slice(0, 4);
+  const featuredPages = combinedPages.slice(0, 4);
 
   // 全投稿（注目のMY 3以外の投稿も含め、検索・ジャンルに対応）
-  const allFilteredPages = MOCK_PAGES.filter((page) => {
+  const allFilteredPages = combinedPages.filter((page) => {
     const matchesCategory = activeCategoryFilter === 'すべて' || page.category === activeCategoryFilter;
     const q = searchQuery.toLowerCase().trim();
     if (!q) return matchesCategory;

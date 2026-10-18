@@ -22,6 +22,7 @@ import {
 import { My3Item, ThemeId } from '@/types';
 import ProModal from '@/components/ProModal';
 import Icon from '@/components/Icon';
+import { saveMy3Page, uploadImageToSupabase } from '@/lib/supabase';
 
 // 有料プラン（Pro）で選べる5つの洗練フォント
 const FONT_OPTIONS = [
@@ -118,6 +119,7 @@ export default function CreateMy3Page() {
   const [title, setTitle] = useState('僕が人生で本気で買ってよかったデスク秘密基地3選');
   const [description, setDescription] = useState('散らかったデスクと肩こりに悩むすべての人へ。毎日の作業が楽しくなる最高の3つの相棒。');
   const [userAffiliateTag, setUserAffiliateTag] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // デザイン・カラー設定
   // 無料用カラー選択 ('white' | 'black' | 'beige')
@@ -169,8 +171,8 @@ export default function CreateMy3Page() {
     useRef<HTMLInputElement | null>(null),
   ];
 
-  // 端末のフォルダから画像ファイルをアップロード
-  const handleFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  // 端末のフォルダから画像ファイルをアップロード (Supabase Storageへ保存)
+  const handleFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -179,22 +181,34 @@ export default function CreateMy3Page() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
+    // まずローカルプレビューを即座に表示
+    const localUrl = URL.createObjectURL(file);
+    setItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], imageUrl: localUrl };
+      return next;
+    });
+    setScrapeNotification(`アイテム #${index + 1} の写真をアップロード中...`);
+
+    // Supabase Storageへクラウドアップロード
+    try {
+      const publicUrl = await uploadImageToSupabase(file);
+      if (publicUrl) {
         setItems((prev) => {
           const next = [...prev];
-          next[index] = { ...next[index], imageUrl: dataUrl };
+          next[index] = { ...next[index], imageUrl: publicUrl };
           return next;
         });
-        setScrapeNotification(`アイテム #${index + 1} の写真をアップロードしました！`);
-        setTimeout(() => setScrapeNotification(null), 3000);
+        setScrapeNotification(`アイテム #${index + 1} の写真をクラウドに保存しました！`);
+      } else {
+        setScrapeNotification(`アイテム #${index + 1} の写真を表示設定しました。`);
       }
-    };
-    reader.readAsDataURL(file);
-    // 同じファイルを再選択できるようにリセット
-    e.target.value = '';
+    } catch {
+      setScrapeNotification(`アイテム #${index + 1} の写真を表示設定しました。`);
+    } finally {
+      setTimeout(() => setScrapeNotification(null), 3000);
+      e.target.value = '';
+    }
   };
 
   const handleScrapeAmazon = async (index: number, targetUrl: string) => {
@@ -257,10 +271,59 @@ export default function CreateMy3Page() {
         fontFamily: FONT_OPTIONS[0].family, // 無料は標準モダンゴシック
       };
 
-  const handlePublish = () => {
-    const slug = 'my-selection-' + Date.now().toString().slice(-4);
-    alert(`「${title}」のMY 3が作成されました！\nURL: https://my3.app/p/${slug}`);
-    router.push(`/p/gadget-desk-nomad`);
+  const handlePublish = async () => {
+    if (!title.trim()) {
+      alert('タイトルを入力してください。');
+      return;
+    }
+    if (items.some((it) => !it.name.trim())) {
+      alert('3つのアイテムすべての商品名を入力してください。');
+      return;
+    }
+
+    setIsPublishing(true);
+
+    try {
+      // ランダムかつ読みやすいユニークなスラッグを生成
+      const randomPart = Math.random().toString(36).substring(2, 7);
+      const generatedSlug = `my3-${Date.now().toString(36).slice(-4)}-${randomPart}`;
+
+      const res = await saveMy3Page(
+        {
+          slug: generatedSlug,
+          title: title.trim(),
+          description: description.trim(),
+          category: 'セレクト',
+          theme_id: selectedPlan === 'pro' ? proColorId : freeColorId,
+          bg_color: previewStyles.bg,
+          card_color: previewStyles.card,
+          font_family: previewStyles.fontFamily,
+          affiliate_tag: userAffiliateTag.trim() || undefined,
+          author_name: '匿名クリエイター',
+          author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+          is_pro: selectedPlan === 'pro',
+        },
+        items.map((it, idx) => ({
+          order_index: idx,
+          name: it.name.trim(),
+          comment: it.comment.trim(),
+          image_url: it.imageUrl,
+          amazon_url: it.amazonUrl.trim() || 'https://www.amazon.co.jp/',
+          asin: it.asin,
+          category: 'セレクト',
+        }))
+      );
+
+      if (res.success && res.slug) {
+        router.push(`/p/${res.slug}`);
+      } else {
+        alert('保存中にエラーが発生しました: ' + (res.error || '不明なエラー'));
+      }
+    } catch (err: any) {
+      alert('公開に失敗しました: ' + err.message);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   return (
@@ -1408,6 +1471,7 @@ export default function CreateMy3Page() {
                 <button
                   type="button"
                   onClick={handlePublish}
+                  disabled={isPublishing}
                   className="btn btn-coral btn-lg"
                   style={{
                     width: '100%',
@@ -1420,11 +1484,13 @@ export default function CreateMy3Page() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '10px',
+                    opacity: isPublishing ? 0.7 : 1,
+                    cursor: isPublishing ? 'wait' : 'pointer',
                   }}
                   id="final-publish-btn"
                 >
                   <Icon name="auto_awesome" size={20} />
-                  <span>この内容でMY 3を公開する</span>
+                  <span>{isPublishing ? 'データベースに公開中...' : 'この内容でMY 3を公開する'}</span>
                 </button>
 
               </div>
