@@ -92,7 +92,7 @@ export default function Footer() {
           color: 'var(--text-muted)',
         }}>
           <div>
-            © 2026 MY 3 (my3.app). All rights reserved.
+            © 2026 MY 3 (my3select.jp). All rights reserved.
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>
             <a href="#" style={{ color: 'var(--text-secondary)' }}>利用規約</a>
