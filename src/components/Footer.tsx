@@ -95,9 +95,9 @@ export default function Footer() {
             © 2026 MY 3 (my3select.jp). All rights reserved.
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>
-            <a href="#" style={{ color: 'var(--text-secondary)' }}>利用規約</a>
-            <a href="#" style={{ color: 'var(--text-secondary)' }}>プライバシーポリシー</a>
-            <a href="#" style={{ color: 'var(--text-secondary)' }}>不適切コンテンツの通報</a>
+            <Link href="/terms" style={{ color: 'var(--text-secondary)' }}>利用規約</Link>
+            <Link href="/privacy" style={{ color: 'var(--text-secondary)' }}>プライバシーポリシー</Link>
+            <Link href="/contact" style={{ color: 'var(--text-secondary)' }}>お問い合わせ・通報</Link>
           </div>
         </div>
       </div>

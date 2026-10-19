@@ -565,7 +565,13 @@ export default function CreateMy3Page() {
                         type="url"
                         value={item.amazonUrl}
                         onChange={(e) => handleItemChange(index, 'amazonUrl', e.target.value)}
-                        placeholder="https://www.amazon.co.jp/dp/... または amzn.to/..."
+                        onPaste={(e) => {
+                          const pasted = e.clipboardData.getData('text');
+                          if (pasted && (pasted.includes('amazon') || pasted.includes('amzn.to') || pasted.includes('amzn.asia'))) {
+                            setTimeout(() => handleScrapeAmazon(index, pasted), 150);
+                          }
+                        }}
+                        placeholder="AmazonのURLを貼り付けると自動入力されます (amzn.to/ ...)"
                         style={{
                           flex: 1,
                           padding: '10px 12px',
@@ -581,10 +587,20 @@ export default function CreateMy3Page() {
                         type="button"
                         onClick={() => handleScrapeAmazon(index, item.amazonUrl)}
                         disabled={loadingScrapeIndex === index || !item.amazonUrl}
-                        className="btn btn-secondary btn-sm"
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+                        className="btn btn-primary btn-sm"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          whiteSpace: 'nowrap',
+                          backgroundColor: '#4B7BEC',
+                          color: '#FFFFFF',
+                          fontWeight: 700,
+                          borderRadius: '10px',
+                          padding: '8px 14px',
+                        }}
                       >
-                        <Search size={14} />
+                        <Sparkles size={14} />
                         <span>{loadingScrapeIndex === index ? '取得中...' : '自動取得'}</span>
                       </button>
                     </div>

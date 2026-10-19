@@ -224,7 +224,12 @@ export async function fetchRecentMy3Pages(limit = 12): Promise<Array<DbPage & { 
       .limit(limit);
 
     if (error || !pages) return [];
-    return pages as any;
+
+    // 各ページのitemsをorder_index順に整列
+    return pages.map((p: any) => ({
+      ...p,
+      items: (p.items || []).sort((a: DbItem, b: DbItem) => a.order_index - b.order_index),
+    }));
   } catch (err) {
     console.error('Fetch recent pages error:', err);
     return [];
