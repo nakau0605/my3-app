@@ -41,6 +41,43 @@ export interface DbItem {
 }
 
 /**
+ * Googleアカウントでログイン
+ */
+export async function signInWithGoogle() {
+  if (!supabase) return { data: null, error: new Error('Supabaseが初期化されていません') };
+  const redirectOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://www.my3select.jp';
+  const redirectTo = `${redirectOrigin}/auth/callback`;
+
+  return await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
+    },
+  });
+}
+
+/**
+ * ログアウト
+ */
+export async function signOut() {
+  if (!supabase) return { error: null };
+  return await supabase.auth.signOut();
+}
+
+/**
+ * 現在のログインユーザーを取得
+ */
+export async function getCurrentUser() {
+  if (!supabase) return null;
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+}
+
+/**
  * 画像ファイルをSupabase Storage ('item-images') にアップロード
  */
 export async function uploadImageToSupabase(file: File): Promise<string | null> {

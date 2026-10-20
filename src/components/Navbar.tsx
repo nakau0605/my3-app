@@ -1,11 +1,50 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Sparkles, PlusCircle, LayoutDashboard, UserCheck, Flame, Compass } from 'lucide-react';
+import { Sparkles, PlusCircle, LayoutDashboard, UserCheck, Flame, Compass, LogOut } from 'lucide-react';
+import { supabase, signInWithGoogle, signOut } from '@/lib/supabase';
 
 export default function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    // 初回ユーザー取得
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    // 認証状態の変化をリスン
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err) {
+      console.error(err);
+      alert('Googleログインに失敗しました。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null);
+    setShowDropdown(false);
+  };
 
   return (
     <header style={{
@@ -128,54 +167,136 @@ export default function Navbar() {
 
         {/* Right CTA Area */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {isLoggedIn ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Link href="/create" className="btn btn-primary btn-sm" id="nav-btn-create" style={{ display: 'flex', gap: '6px', padding: '8px 16px' }}>
-                <PlusCircle size={16} />
-                <span className="nav-btn-text">MY 3を作る</span>
-              </Link>
+          <Link href="/create" className="btn btn-primary btn-sm" id="nav-btn-create" style={{ display: 'flex', gap: '6px', padding: '8px 16px' }}>
+            <PlusCircle size={16} />
+            <span className="nav-btn-text">MY 3を作る</span>
+          </Link>
 
+          {user ? (
+            <div style={{ position: 'relative' }}>
               <button
-                onClick={() => setIsLoggedIn(!isLoggedIn)}
-                title="Googleアカウント（ログイン中）"
+                onClick={() => setShowDropdown(!showDropdown)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '4px 8px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-light)',
-                  color: 'var(--text-primary)',
-                  fontSize: '0.8rem',
+                  gap: '8px',
+                  padding: '4px 10px 4px 4px',
+                  borderRadius: '999px',
+                  backgroundColor: '#F1F5F9',
+                  border: '1px solid #CBD5E1',
+                  cursor: 'pointer',
                 }}
-                id="nav-user-toggle"
+                id="nav-user-menu-btn"
               >
-                <div style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  background: 'var(--color-blue)',
-                  color: '#FFFFFF',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                }}>
-                  G
-                </div>
-                <UserCheck size={14} color="#2ECC71" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
+                  alt={user.user_metadata?.full_name || 'ユーザー'}
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
+                />
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.user_metadata?.full_name || 'ユーザー'}
+                </span>
               </button>
+
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '8px',
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '16px',
+                  padding: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  border: '1px solid #E2E8F0',
+                  minWidth: '180px',
+                  zIndex: 50,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                }}>
+                  <div style={{ padding: '8px 12px', borderBottom: '1px solid #F1F5F9' }}>
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748B' }}>ログイン中</p>
+                    <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.email}
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setShowDropdown(false)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      fontSize: '0.85rem',
+                      color: '#334155',
+                      textDecoration: 'none',
+                      borderRadius: '8px',
+                    }}
+                  >
+                    <LayoutDashboard size={15} />
+                    ダッシュボード
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      fontSize: '0.85rem',
+                      color: '#EF4444',
+                      background: 'none',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                    }}
+                  >
+                    <LogOut size={15} />
+                    ログアウト
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button
-              onClick={() => setIsLoggedIn(true)}
+              onClick={handleLogin}
+              disabled={loading}
               className="btn btn-secondary btn-sm"
-              id="nav-btn-login"
-              style={{ display: 'flex', gap: '8px' }}
+              id="nav-btn-google-login"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 14px',
+                borderRadius: '10px',
+                border: '1px solid #CBD5E1',
+                backgroundColor: '#FFFFFF',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                color: '#1E293B',
+              }}
             >
-              <span>ログイン</span>
+              {/* Google G Logo SVG */}
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.24C.45 8.15 0 9.92 0 12s.45 3.85 1.24 5.42l4.04-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.24 6.58l4.04 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+              <span>{loading ? '接続中...' : 'Googleでログイン'}</span>
             </button>
           )}
         </div>
