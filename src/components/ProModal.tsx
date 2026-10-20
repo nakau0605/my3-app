@@ -11,7 +11,7 @@ export default function ProModal({ onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const STRIPE_PAYMENT_URL = 'https://buy.stripe.com/fZufZh1ym6wT8A0gNo8AE00';
+  const STRIPE_PAYMENT_URL = 'https://buy.stripe.com/fZufZh1yn6w78A0gNe8AE00';
 
   const handleStripeCheckout = () => {
     setLoading(true);
