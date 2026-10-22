@@ -60,6 +60,34 @@ function getLinkMeta(rawUrl: string, affiliateUrl: string) {
     };
   }
 
+  if (urlLower.includes('note.com')) {
+    return {
+      type: 'note',
+      badge: 'note',
+      label: 'noteで読む',
+      url: rawUrl,
+      icon: ExternalLink,
+      btnStyle: {
+        background: '#20C997',
+        color: '#FFFFFF',
+      },
+    };
+  }
+
+  if (urlLower.includes('maps.google') || urlLower.includes('goo.gl/maps') || urlLower.includes('maps.app.goo.gl')) {
+    return {
+      type: 'map',
+      badge: 'マップ',
+      label: 'Googleマップで見る',
+      url: rawUrl,
+      icon: ExternalLink,
+      btnStyle: {
+        background: '#4285F4',
+        color: '#FFFFFF',
+      },
+    };
+  }
+
   return {
     type: 'web',
     badge: 'Web',

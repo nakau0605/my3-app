@@ -110,11 +110,11 @@ const PRO_SEVEN_COLORS = [
   { id: 'rose', name: 'ローズピンク', bg: '#831843', card: '#9D174D', text: '#FFF1F2' },
 ];
 
-// 公式お題（テンプレート）
+// 公式お題（テンプレート）- モノ・カルチャー・Webの多様な偏愛に対応
 const PROMPT_TEMPLATES = [
   {
     emoji: '🖥️',
-    label: 'デスク周り',
+    label: 'デスク環境',
     title: 'デスク環境のスタメン3選',
     description: '作業効率と集中力が爆上がりした、毎日のデスク秘密基地の相棒たち。',
   },
@@ -125,24 +125,55 @@ const PROMPT_TEMPLATES = [
     description: 'これがないと1日が始まらない。軽量・実用性を突き詰めた必需品。',
   },
   {
-    emoji: '🎧',
-    label: '集中・作業用',
-    title: '作業に没頭できる神アイテム3選',
-    description: 'カフェや自宅がプライベート作業部屋になる、集中力を最大化する相棒。',
+    emoji: '🎬',
+    label: '人生のYouTube',
+    title: '人生観が変わったYouTube動画3選',
+    description: '何度も見返してしまう、思考を揺さぶられた至高の動画たち。',
+  },
+  {
+    emoji: '🎵',
+    label: '作業用Spotify',
+    title: '集中作業が加速するSpotify名盤3選',
+    description: '音の没入感で作業が劇的に捗る、愛してやまない音楽・ポッドキャスト。',
+  },
+  {
+    emoji: '📖',
+    label: '必読note・記事',
+    title: '何度も読み返す至高のWeb記事3選',
+    description: '知性と感性を刺激してくれた、一生ブックマークしておきたい神記事。',
   },
   {
     emoji: '☕',
     label: '暮らしの質',
     title: '暮らしの質が上がった偏愛3選',
-    description: '買って生活が本当に豊かになった、心からおすすめしたい名品たち。',
+    description: '生活が本当に豊かになった、心からおすすめしたい名品たち。',
   },
   {
-    emoji: '🏃',
-    label: 'ウェルネス',
-    title: '心と体を整えるマイギア3選',
-    description: '継続とリカバリーを支えてくれた、手放せない愛用品たち。',
+    emoji: '🧖',
+    label: '整うサウナ・場所',
+    title: '自分をリセットできる偏愛スポット3選',
+    description: '頭を空っぽにして整える、誰にも教えたくない秘密のサウナ・場所。',
+  },
+  {
+    emoji: '📱',
+    label: '神アプリ3選',
+    title: '毎日起動する手放せない神アプリ3選',
+    description: '私のライフスタイルと生産性を劇的に変えてくれたツールたち。',
   },
 ];
+
+// URL種別（YouTube / Spotify / Amazon / note / Web）の自動判定
+function detectUrlType(url: string) {
+  if (!url) return null;
+  const u = url.toLowerCase();
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return { label: 'YouTube動画', color: '#FF0000', emoji: '🎬' };
+  if (u.includes('spotify.com')) return { label: 'Spotify音源', color: '#1DB954', emoji: '🎵' };
+  if (u.includes('amazon') || u.includes('amzn.to') || u.includes('amzn.asia')) return { label: 'Amazon商品', color: '#FF9900', emoji: '📦' };
+  if (u.includes('note.com')) return { label: 'note記事', color: '#20C997', emoji: '📝' };
+  if (u.includes('maps.google') || u.includes('goo.gl/maps') || u.includes('maps.app.goo.gl')) return { label: 'Googleマップ', color: '#4285F4', emoji: '📍' };
+  if (u.startsWith('http://') || u.startsWith('https://')) return { label: 'Webサイト / 記事', color: '#4B7BEC', emoji: '🌐' };
+  return null;
+}
 
 export default function CreateMy3Page() {
   const router = useRouter();
@@ -751,9 +782,18 @@ export default function CreateMy3Page() {
 
                   {/* Item / Content URL Input */}
                   <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                      URL (Amazon商品 / YouTube / Spotify / Web記事など)
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+                      <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                        紹介リンク（URL）
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', color: '#64748B' }}>
+                        <span>対応:</span>
+                        <span style={{ backgroundColor: '#FF0000', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>YouTube</span>
+                        <span style={{ backgroundColor: '#1DB954', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>Spotify</span>
+                        <span style={{ backgroundColor: '#FF9900', color: '#111', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>Amazon</span>
+                        <span style={{ backgroundColor: '#20C997', color: '#FFF', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>note/Web</span>
+                      </div>
+                    </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input
                         type="url"
@@ -798,6 +838,29 @@ export default function CreateMy3Page() {
                         <span>{loadingScrapeIndex === index ? '取得中...' : '自動取得'}</span>
                       </button>
                     </div>
+
+                    {/* リアルタイムURL種別検出バッジ */}
+                    {(() => {
+                      const detected = detectUrlType(item.amazonUrl);
+                      if (!detected) return null;
+                      return (
+                        <div style={{
+                          marginTop: '6px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.74rem',
+                          color: '#334155',
+                          backgroundColor: '#F1F5F9',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                        }}>
+                          <span>{detected.emoji}</span>
+                          <span style={{ fontWeight: 700, color: detected.color }}>{detected.label}</span>
+                          <span style={{ color: '#64748B' }}>を検出しました（自動取得ボタンで反映できます）</span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Image Preview & Details */}
