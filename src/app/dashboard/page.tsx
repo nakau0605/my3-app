@@ -16,10 +16,12 @@ import {
   Pencil,
   Trash2,
   Settings,
+  LogOut,
+  User,
 } from 'lucide-react';
 import ProModal from '@/components/ProModal';
 import { useAuth } from '@/lib/useAuth';
-import { signInWithGoogle, fetchMyPages, deleteMy3Page, DbPage, DbItem } from '@/lib/supabase';
+import { signInWithGoogle, signOut, fetchMyPages, deleteMy3Page, DbPage, DbItem } from '@/lib/supabase';
 
 type MyPage = DbPage & { items: DbItem[] };
 
@@ -95,20 +97,84 @@ export default function DashboardPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#F8F9FD', padding: '40px 0 90px' }}>
       <div className="container">
+        {/* User Profile Bar */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '20px',
+          padding: '16px 24px',
+          border: '1px solid #EAECEF',
+          marginBottom: '28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'}
+              alt={user.user_metadata?.full_name || 'ユーザー'}
+              style={{ width: '46px', height: '46px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #E2E8F0' }}
+            />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1C1C1E' }}>
+                  {user.user_metadata?.full_name || user.email?.split('@')[0] || 'ユーザー'}
+                </span>
+                {isPro ? (
+                  <span className="badge badge-pro" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                    <Crown size={11} /> PRO
+                  </span>
+                ) : (
+                  <span className="badge" style={{ backgroundColor: '#F1F5F9', color: '#64748B', fontSize: '0.7rem', padding: '2px 8px' }}>
+                    FREE
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '2px' }}>
+                {user.email}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              if (window.confirm('ログアウトしますか？')) {
+                await signOut();
+                window.location.href = '/';
+              }
+            }}
+            className="btn btn-secondary btn-sm"
+            id="mypage-logout-btn"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#EF4444',
+              borderColor: '#FCA5A5',
+              padding: '8px 14px',
+            }}
+          >
+            <LogOut size={15} />
+            <span>ログアウト</span>
+          </button>
+        </div>
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '36px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span className="badge badge-tag" style={{ fontSize: '0.75rem' }}>ANALYTICS & CONTROL</span>
+              <span className="badge badge-tag" style={{ fontSize: '0.75rem' }}>MY PAGE & ANALYTICS</span>
               {isPro ? (
                 <span className="badge badge-pro" style={{ fontSize: '0.75rem' }}><Crown size={12} /> PRO MEMBER</span>
               ) : (
                 <span className="badge" style={{ backgroundColor: '#E2E8F0', color: '#48484A', fontSize: '0.75rem' }}>FREE PLAN</span>
               )}
             </div>
-            <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#1C1C1E', margin: 0 }}>マイダッシュボード</h1>
+            <h1 style={{ fontSize: '1.85rem', fontWeight: 900, color: '#1C1C1E', margin: 0 }}>マイページ</h1>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              あなたのMY 3の閲覧数・クリック数を確認できます。
+              あなたが作成したMY 3ページの管理と、反響（閲覧数・クリック数）を確認できます。
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>

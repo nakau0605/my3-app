@@ -151,7 +151,7 @@ export default function Navbar() {
             料金プラン
           </Link>
 
-          <Link href="/dashboard" style={{
+          <Link href="/mypage" style={{
             fontSize: '0.92rem',
             color: 'var(--text-secondary)',
             fontWeight: 600,
@@ -161,7 +161,7 @@ export default function Navbar() {
             transition: 'color 0.2s',
           }} id="nav-dashboard">
             <LayoutDashboard size={16} color="#8E7CC3" />
-            <span>ダッシュボード</span>
+            <span>マイページ</span>
           </Link>
         </nav>
 
@@ -173,7 +173,24 @@ export default function Navbar() {
           </Link>
 
           {user ? (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link
+                href="/mypage"
+                className="btn btn-secondary btn-sm"
+                id="nav-btn-mypage"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                }}
+              >
+                <LayoutDashboard size={14} color="#8E7CC3" />
+                <span>マイページ</span>
+              </Link>
+
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
                 style={{
@@ -187,6 +204,7 @@ export default function Navbar() {
                   cursor: 'pointer',
                 }}
                 id="nav-user-menu-btn"
+                title="アカウントメニュー"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -200,7 +218,7 @@ export default function Navbar() {
                   }}
                 />
                 <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {user.user_metadata?.full_name || 'ユーザー'}
+                  {user.user_metadata?.full_name || 'マイページ'}
                 </span>
               </button>
 
@@ -216,34 +234,36 @@ export default function Navbar() {
                   padding: '8px',
                   boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                   border: '1px solid #E2E8F0',
-                  minWidth: '180px',
+                  minWidth: '200px',
                   zIndex: 50,
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '4px',
                 }}>
                   <div style={{ padding: '8px 12px', borderBottom: '1px solid #F1F5F9' }}>
-                    <p style={{ margin: 0, fontSize: '0.78rem', color: '#64748B' }}>ログイン中</p>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>ログイン中のアカウント</p>
                     <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {user.email}
                     </p>
                   </div>
                   <Link
-                    href="/dashboard"
+                    href="/mypage"
                     onClick={() => setShowDropdown(false)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '8px 12px',
-                      fontSize: '0.85rem',
+                      padding: '10px 12px',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
                       color: '#334155',
                       textDecoration: 'none',
                       borderRadius: '8px',
+                      backgroundColor: '#F8F9FD',
                     }}
                   >
-                    <LayoutDashboard size={15} />
-                    ダッシュボード
+                    <LayoutDashboard size={16} color="#8E7CC3" />
+                    マイページ（管理画面）
                   </Link>
                   <button
                     onClick={handleLogout}
@@ -251,8 +271,9 @@ export default function Navbar() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '8px 12px',
-                      fontSize: '0.85rem',
+                      padding: '10px 12px',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
                       color: '#EF4444',
                       background: 'none',
                       border: 'none',
@@ -262,7 +283,7 @@ export default function Navbar() {
                       width: '100%',
                     }}
                   >
-                    <LogOut size={15} />
+                    <LogOut size={16} />
                     ログアウト
                   </button>
                 </div>
