@@ -10,6 +10,7 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
 
 export interface DbPage {
   id: string;
+  user_id?: string | null;
   slug: string;
   title: string;
   description: string;
@@ -37,7 +38,34 @@ export interface DbItem {
   amazon_url: string;
   asin?: string;
   category?: string;
+  clicks?: number;
   created_at: string;
+}
+
+const ALLOWED_AMAZON_HOSTS = ['amazon.co.jp', 'amazon.com', 'amzn.to', 'amzn.asia'];
+
+/** Amazon系ドメインのURLかどうか検証 */
+export function isAmazonUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return ALLOWED_AMAZON_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+  } catch {
+    return false;
+  }
+}
+
+/** 有効なアイテムURL（Amazon, YouTube, Spotify, Webリンク等）の検証 */
+export function isValidItemUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const h = parsed.hostname.toLowerCase();
+    if (h === 'localhost' || h === '127.0.0.1' || h === '::1' || h.endsWith('.local')) return false;
+    if (/^10\./.test(h) || /^192\.168\./.test(h) || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(h)) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -108,7 +136,7 @@ export async function uploadImageToSupabase(file: File): Promise<string | null> 
 }
 
 /**
- * MY 3ページとアイテム3件を一括保存
+ * MY 3ページとアイテム3件を一括保存（ログイン必須）
  */
 export async function saveMy3Page(
   page: Omit<DbPage, 'id' | 'views' | 'clicks' | 'created_at'>,
@@ -119,10 +147,17 @@ export async function saveMy3Page(
   }
 
   try {
+    const user = await getCurrentUser();
+    if (!user) return { success: false, error: 'ログインが必要です。' };
+    if (items.some((i) => !isValidItemUrl(i.amazon_url))) {
+      return { success: false, error: '有効なURL（Amazon、YouTube、Spotify、Webサイトなど）を入力してください。' };
+    }
+
     // 1. ページ作成
     const { data: pageData, error: pageError } = await supabase
       .from('pages')
       .insert({
+        user_id: user.id,
         slug: page.slug,
         title: page.title,
         description: page.description,
@@ -143,6 +178,7 @@ export async function saveMy3Page(
       console.error('Page insert error:', pageError);
       return { success: false, error: pageError?.message || 'ページの作成に失敗しました。' };
     }
+    // 注: 失敗時の巻き戻し用に page.id を保持
 
     // 2. アイテム3件作成
     const itemsToInsert = items.map((item, idx) => ({
@@ -162,6 +198,7 @@ export async function saveMy3Page(
 
     if (itemsError) {
       console.error('Items insert error:', itemsError);
+      await supabase.from('pages').delete().eq('id', pageData.id);
       return { success: false, error: itemsError.message };
     }
 
@@ -203,49 +240,113 @@ export async function fetchMy3PageBySlug(slug: string): Promise<{ page: DbPage; 
 }
 
 /**
- * 閲覧数（PV）をインクリメント
+ * 閲覧数（PV）をインクリメント（RPC経由。1セッション1ページ1回）
  */
 export async function incrementPageViews(slug: string) {
   if (!supabase) return;
   try {
-    const { data } = await supabase
-      .from('pages')
-      .select('views')
-      .eq('slug', slug)
-      .single();
-
-    if (data) {
-      await supabase
-        .from('pages')
-        .update({ views: (data.views || 0) + 1 })
-        .eq('slug', slug);
+    const key = `viewed:${slug}`;
+    if (typeof window !== 'undefined') {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
     }
+    await supabase.rpc('increment_page_views', { p_slug: slug });
   } catch (err) {
     console.error('Increment views error:', err);
   }
 }
 
 /**
- * クリック数をインクリメント
+ * アイテム（Amazonリンク）のクリック数をインクリメント（RPC経由）
  */
-export async function incrementPageClicks(slug: string) {
-  if (!supabase) return;
+export async function incrementItemClick(itemId: string) {
+  if (!supabase || !itemId) return;
   try {
-    const { data } = await supabase
-      .from('pages')
-      .select('clicks')
-      .eq('slug', slug)
-      .single();
-
-    if (data) {
-      await supabase
-        .from('pages')
-        .update({ clicks: (data.clicks || 0) + 1 })
-        .eq('slug', slug);
-    }
+    await supabase.rpc('increment_item_click', { p_item_id: itemId });
   } catch (err) {
-    console.error('Increment clicks error:', err);
+    console.error('Increment click error:', err);
   }
+}
+
+/** 自分のProステータス */
+export async function fetchMyProfile(userId: string): Promise<{ is_pro: boolean } | null> {
+  if (!supabase) return null;
+  const { data } = await supabase.from('profiles').select('is_pro').eq('id', userId).maybeSingle();
+  return data ? { is_pro: !!data.is_pro } : { is_pro: false };
+}
+
+/** 自分のページ一覧（items付き） */
+export async function fetchMyPages(userId: string): Promise<Array<DbPage & { items: DbItem[] }>> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('pages')
+    .select('*, items(*)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error || !data) return [];
+  return data.map((p: any) => ({
+    ...p,
+    items: (p.items || []).sort((a: DbItem, b: DbItem) => a.order_index - b.order_index),
+  }));
+}
+
+/** ページ更新（アイテムは order_index ごとに更新） */
+export async function updateMy3Page(
+  pageId: string,
+  page: Partial<Pick<DbPage, 'title' | 'description' | 'category' | 'theme_id' | 'bg_color' | 'card_color' | 'font_family' | 'affiliate_tag'>>,
+  items: Array<Omit<DbItem, 'id' | 'page_id' | 'created_at'>>
+): Promise<{ success: boolean; error?: string }> {
+  if (!supabase) return { success: false, error: 'Supabaseが初期化されていません。' };
+  if (items.some((i) => !isValidItemUrl(i.amazon_url))) {
+    return { success: false, error: '有効なURL（Amazon、YouTube、Spotify、Webサイトなど）を入力してください。' };
+  }
+  const { error } = await supabase.from('pages').update(page).eq('id', pageId);
+  if (error) return { success: false, error: error.message };
+  for (let idx = 0; idx < items.length; idx++) {
+    const it = items[idx];
+    const { error: e } = await supabase
+      .from('items')
+      .update({
+        name: it.name,
+        comment: it.comment,
+        image_url: it.image_url,
+        amazon_url: it.amazon_url,
+        asin: it.asin || null,
+        category: it.category || 'アイテム',
+      })
+      .eq('page_id', pageId)
+      .eq('order_index', idx);
+    if (e) return { success: false, error: e.message };
+  }
+  return { success: true };
+}
+
+/** ページ削除（itemsはカスケード or 先に削除） */
+export async function deleteMy3Page(pageId: string): Promise<{ success: boolean; error?: string }> {
+  if (!supabase) return { success: false, error: 'Supabaseが初期化されていません。' };
+  await supabase.from('items').delete().eq('page_id', pageId);
+  const { error } = await supabase.from('pages').delete().eq('id', pageId);
+  return error ? { success: false, error: error.message } : { success: true };
+}
+
+/** お問い合わせ・通報の保存 */
+export async function submitContactMessage(input: {
+  name?: string;
+  email?: string;
+  subject?: string;
+  message: string;
+  page_slug?: string;
+  kind?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  if (!supabase) return { success: false, error: 'Supabaseが初期化されていません。' };
+  const { error } = await supabase.from('contact_messages').insert({
+    name: input.name || null,
+    email: input.email || null,
+    message: (input.subject ? `[${input.subject}] ` : '') + input.message,
+    page_slug: input.page_slug || null,
+    kind: input.kind || 'contact',
+  });
+  return error ? { success: false, error: error.message } : { success: true };
 }
 
 /**

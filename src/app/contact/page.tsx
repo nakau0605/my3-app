@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Mail, Send, CheckCircle, MessageSquare } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { submitContactMessage } from '@/lib/supabase';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -16,19 +17,23 @@ export default function ContactPage() {
     message: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.message) {
       alert('すべての必須項目を入力してください。');
       return;
     }
     setLoading(true);
-
-    // 簡易送信完了シミュレーション（将来的なAPI連携に対応）
-    setTimeout(() => {
-      setLoading(false);
-      setSubmitted(true);
-    }, 600);
+    const res = await submitContactMessage({
+      kind: formData.type.includes('通報') ? 'report' : 'contact',
+      name: formData.name,
+      email: formData.email,
+      subject: formData.type,
+      message: formData.message,
+    });
+    setLoading(false);
+    if (res.success) setSubmitted(true);
+    else alert('送信に失敗しました。時間をおいて再度お試しください。');
   };
 
   return (

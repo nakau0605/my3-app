@@ -5,13 +5,13 @@ import Footer from '@/components/Footer';
 import MobileNav from '@/components/MobileNav';
 
 export const metadata: Metadata = {
-  title: 'MY 3（マイスリー）| あなたの偏愛3選が、誰かの買い物になり、あなたの収益になる',
-  description: 'プロフィールに貼るだけ。3つ選ぶだけで洗練されたアフィリエイトページが完成する1ペラ・キュレーションツール。雑誌風・ポラロイド風・ダークモードに1タップで着せ替え。',
-  keywords: ['MY 3', 'マイスリー', 'アフィリエイト', 'キュレーション', '偏愛3選', 'Amazonアソシエイト', 'リンク集'],
+  title: 'MY 3（マイスリー）| あなたの偏愛で、あなたを語るデジタル名刺',
+  description: '3つのアイテムで、あなたを語る。あなたの偏愛が、誰かの次の熱狂になる。プロフィールに貼るだけで、洗練されたこだわりショーケースが完成するキュレーションツール。',
+  keywords: ['MY 3', 'マイスリー', '偏愛3選', '愛用品', 'デジタル名刺', 'デスクツアー', 'ガジェット', 'リンクインバイオ', 'キュレーション'],
   openGraph: {
-    title: 'MY 3（マイスリー）| 偏愛3選が、収益になる',
-    description: 'プロフィールにリンクを貼るだけ。3つのお気に入りで収益が発生する手軽な1ペラサイト作成ツール。',
-    url: 'https://my3.app',
+    title: 'MY 3（マイスリー）| あなたの偏愛で、あなたを語るデジタル名刺',
+    description: '3つのアイテムで、あなたを語る。あなたの偏愛が、誰かの次の熱狂になる。',
+    url: 'https://www.my3select.jp',
     siteName: 'MY 3',
     locale: 'ja_JP',
     type: 'website',

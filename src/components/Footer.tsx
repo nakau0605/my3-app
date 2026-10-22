@@ -46,8 +46,8 @@ export default function Footer() {
               </span>
             </div>
             <p style={{ lineHeight: 1.7, color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              あなたの偏愛3選が、誰かの買い物になり、あなたの収益になる。
-              プロフィールに貼るだけで完成する、最も手軽な1ペラ・キュレーションプラットフォーム。
+              3つのアイテムで、あなたを語る。あなたの偏愛が、誰かの次の熱狂になる。
+              プロフィールに貼るだけで完成する、洗練されたこだわりショーケースツール。
             </p>
           </div>
 
@@ -60,7 +60,7 @@ export default function Footer() {
               <li><Link href="/#ranking">注目のMY 3</Link></li>
               <li><Link href="/create">新しいMY 3を作成</Link></li>
               <li><Link href="/#plans">Proプランのご案内</Link></li>
-              <li><Link href="/dashboard">アクセス・収益ダッシュボード</Link></li>
+              <li><Link href="/dashboard">アクセス・反響ダッシュボード</Link></li>
             </ul>
           </div>
 
@@ -97,6 +97,7 @@ export default function Footer() {
           <div style={{ display: 'flex', gap: '20px' }}>
             <Link href="/terms" style={{ color: 'var(--text-secondary)' }}>利用規約</Link>
             <Link href="/privacy" style={{ color: 'var(--text-secondary)' }}>プライバシーポリシー</Link>
+            <Link href="/tokushoho" style={{ color: 'var(--text-secondary)' }}>特定商取引法に基づく表記</Link>
             <Link href="/contact" style={{ color: 'var(--text-secondary)' }}>お問い合わせ・通報</Link>
           </div>
         </div>

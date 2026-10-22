@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -22,7 +22,15 @@ import {
 import { My3Item, ThemeId } from '@/types';
 import ProModal from '@/components/ProModal';
 import Icon from '@/components/Icon';
-import { saveMy3Page, uploadImageToSupabase } from '@/lib/supabase';
+import { saveMy3Page, uploadImageToSupabase, fetchMy3PageBySlug, updateMy3Page, fetchMyPages, isValidItemUrl, signInWithGoogle } from '@/lib/supabase';
+import { useAuth } from '@/lib/useAuth';
+
+// 画像未設定時のプレースホルダー（グレーのボックス）
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='800' height='550'><rect width='100%' height='100%' fill='#EEF1F6'/><text x='50%' y='50%' fill='#9AA5B8' font-size='28' text-anchor='middle' dominant-baseline='middle' font-family='sans-serif'>画像を設定してください</text></svg>"
+  );
 
 // 有料プラン（Pro）で選べる5つの洗練フォント
 const FONT_OPTIONS = [
@@ -102,8 +110,46 @@ const PRO_SEVEN_COLORS = [
   { id: 'rose', name: 'ローズピンク', bg: '#831843', card: '#9D174D', text: '#FFF1F2' },
 ];
 
+// 公式お題（テンプレート）
+const PROMPT_TEMPLATES = [
+  {
+    emoji: '🖥️',
+    label: 'デスク周り',
+    title: 'デスク環境のスタメン3選',
+    description: '作業効率と集中力が爆上がりした、毎日のデスク秘密基地の相棒たち。',
+  },
+  {
+    emoji: '🎒',
+    label: 'カバンの中身',
+    title: '毎日持ち歩くカバンの中身3選',
+    description: 'これがないと1日が始まらない。軽量・実用性を突き詰めた必需品。',
+  },
+  {
+    emoji: '🎧',
+    label: '集中・作業用',
+    title: '作業に没頭できる神アイテム3選',
+    description: 'カフェや自宅がプライベート作業部屋になる、集中力を最大化する相棒。',
+  },
+  {
+    emoji: '☕',
+    label: '暮らしの質',
+    title: '暮らしの質が上がった偏愛3選',
+    description: '買って生活が本当に豊かになった、心からおすすめしたい名品たち。',
+  },
+  {
+    emoji: '🏃',
+    label: 'ウェルネス',
+    title: '心と体を整えるマイギア3選',
+    description: '継続とリカバリーを支えてくれた、手放せない愛用品たち。',
+  },
+];
+
 export default function CreateMy3Page() {
   const router = useRouter();
+  const { user, isPro, loading: authLoading } = useAuth();
+  // 編集モード（?edit=slug）
+  const [editing, setEditing] = useState<{ id: string; slug: string } | null>(null);
+  const [editError, setEditError] = useState('');
 
   // 作成ステップ: 1 = アイテム入力, 2 = プレビュー＆デザイン・カラー編集
   const [currentStep, setCurrentStep] = useState<1 | 2>(1);
@@ -112,12 +158,19 @@ export default function CreateMy3Page() {
   // スマホ表示時のStep 2タブ: 'design' = 色・フォント編集, 'preview' = 全画面プレビュー
   const [step2MobileTab, setStep2MobileTab] = useState<'design' | 'preview'>('design');
 
-  // プラン選択: 'free' | 'pro'
+  // プラン選択: 'free' | 'pro'（ProはPro会員のみ選択可）
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro'>('free');
+  const handleSelectPro = () => {
+    if (!isPro) {
+      setShowProModal(true);
+      return;
+    }
+    setSelectedPlan('pro');
+  };
 
   // 基本情報
-  const [title, setTitle] = useState('僕が人生で本気で買ってよかったデスク秘密基地3選');
-  const [description, setDescription] = useState('散らかったデスクと肩こりに悩むすべての人へ。毎日の作業が楽しくなる最高の3つの相棒。');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [userAffiliateTag, setUserAffiliateTag] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -135,31 +188,49 @@ export default function CreateMy3Page() {
 
   // 厳選3アイテム固定
   const [items, setItems] = useState<My3Item[]>([
-    {
-      id: 'item-1',
-      name: 'HHKB Professional HYBRID Type-S 墨',
-      comment: '打鍵音が完全に癒し。一度このスコスコ感に慣れると、もう他のキーボードには戻れません。',
-      imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=80',
-      amazonUrl: 'https://www.amazon.co.jp/dp/B082TXXCGF',
-      asin: 'B082TXXCGF',
-    },
-    {
-      id: 'item-2',
-      name: 'Apple AirPods Pro 第2世代 (USB-C)',
-      comment: 'ノイキャンをONにした瞬間に世界から雑音が消え去る。カフェが完全な個室作業部屋になります。',
-      imageUrl: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=800&q=80',
-      amazonUrl: 'https://www.amazon.co.jp/dp/B0CHWRXH8B',
-      asin: 'B0CHWRXH8B',
-    },
-    {
-      id: 'item-3',
-      name: 'Logicool MX Master 3S 静音マウス',
-      comment: '手首が一切疲れず、超高速スクロールで長文ドキュメントも一瞬で移動できる最高のマウス。',
-      imageUrl: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80',
-      amazonUrl: 'https://www.amazon.co.jp/dp/B0B1475Q6B',
-      asin: 'B0B1475Q6B',
-    },
+    { id: 'item-1', name: '', comment: '', imageUrl: '', amazonUrl: '', asin: '' },
+    { id: 'item-2', name: '', comment: '', imageUrl: '', amazonUrl: '', asin: '' },
+    { id: 'item-3', name: '', comment: '', imageUrl: '', amazonUrl: '', asin: '' },
   ]);
+
+  // 編集モード: ?edit=slug で既存ページを読み込む（持ち主のみ）
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const slug = new URLSearchParams(window.location.search).get('edit');
+    if (!slug) return;
+    fetchMy3PageBySlug(slug).then((result) => {
+      if (!result || result.page.user_id !== user.id) {
+        setEditError('編集できるページが見つかりません。');
+        return;
+      }
+      const { page, items: dbItems } = result;
+      setEditing({ id: page.id, slug: page.slug });
+      setTitle(page.title);
+      setDescription(page.description || '');
+      setUserAffiliateTag(page.affiliate_tag || '');
+      setItems(
+        [0, 1, 2].map((i) => {
+          const it = dbItems[i];
+          return {
+            id: it?.id || `item-${i + 1}`,
+            name: it?.name || '',
+            comment: it?.comment || '',
+            imageUrl: it?.image_url || '',
+            amazonUrl: it?.amazon_url || '',
+            asin: it?.asin || '',
+          };
+        })
+      );
+      if (['white', 'black', 'beige'].includes(page.theme_id)) {
+        setFreeColorId(page.theme_id as 'white' | 'black' | 'beige');
+      } else if (page.is_pro) {
+        setSelectedPlan('pro');
+        setProColorId(page.theme_id);
+        setCustomBgColor(page.bg_color);
+        setCustomCardColor(page.card_color);
+      }
+    });
+  }, [authLoading, user]);
 
   const [loadingScrapeIndex, setLoadingScrapeIndex] = useState<number | null>(null);
   const [scrapeNotification, setScrapeNotification] = useState<string | null>(null);
@@ -225,14 +296,22 @@ export default function CreateMy3Page() {
           const next = [...prev];
           next[index] = {
             ...next[index],
-            name: data.item.title || next[index].name,
+            name: next[index].name || data.item.title || '',
             imageUrl: data.item.imageUrl || next[index].imageUrl,
             asin: data.item.asin || next[index].asin,
+            amazonUrl: data.item.amazonUrl || next[index].amazonUrl,
           };
           return next;
         });
-        setScrapeNotification(`アイテム #${index + 1} の商品情報と画像を取得しました！`);
-        setTimeout(() => setScrapeNotification(null), 3000);
+        setScrapeNotification(
+          data.item.imageUrl
+            ? `アイテム #${index + 1} の商品情報と画像を取得しました！`
+            : data.message || '自動取得できませんでした。商品名と写真を手動で設定してください。'
+        );
+        setTimeout(() => setScrapeNotification(null), 4000);
+      } else if (data.error) {
+        setScrapeNotification(data.error);
+        setTimeout(() => setScrapeNotification(null), 4000);
       }
     } catch {
       setScrapeNotification('取得に失敗しました。商品名を入力するか、写真をアップロードしてください。');
@@ -272,6 +351,7 @@ export default function CreateMy3Page() {
       };
 
   const handlePublish = async () => {
+    if (!user) return;
     if (!title.trim()) {
       alert('タイトルを入力してください。');
       return;
@@ -280,13 +360,62 @@ export default function CreateMy3Page() {
       alert('3つのアイテムすべての商品名を入力してください。');
       return;
     }
+    if (items.some((it) => !it.amazonUrl.trim() || !isValidItemUrl(it.amazonUrl.trim()))) {
+      alert('3つのアイテムすべてに有効なURL（Amazon、YouTube、Spotify、Webサイトなど）を入力してください。');
+      return;
+    }
+    if (items.some((it) => !it.imageUrl || it.imageUrl.startsWith('blob:'))) {
+      alert('3つのアイテムすべてに画像を設定してください（アップロードが完了していない可能性もあります）。');
+      return;
+    }
 
     setIsPublishing(true);
+    const usePro = isPro && selectedPlan === 'pro';
+    const itemRows = items.map((it, idx) => ({
+      order_index: idx,
+      name: it.name.trim(),
+      comment: it.comment.trim(),
+      image_url: it.imageUrl,
+      amazon_url: it.amazonUrl.trim(),
+      asin: it.asin,
+      category: 'セレクト',
+    }));
 
     try {
+      // 編集モード
+      if (editing) {
+        const upd = await updateMy3Page(
+          editing.id,
+          {
+            title: title.trim(),
+            description: description.trim(),
+            theme_id: usePro ? proColorId : freeColorId,
+            bg_color: previewStyles.bg,
+            card_color: previewStyles.card,
+            font_family: previewStyles.fontFamily,
+            affiliate_tag: userAffiliateTag.trim() || undefined,
+          },
+          itemRows
+        );
+        if (upd.success) router.push(`/p/${editing.slug}`);
+        else alert('保存中にエラーが発生しました: ' + (upd.error || '不明なエラー'));
+        return;
+      }
+
+      // 無料プランは3ページまで
+      if (!isPro) {
+        const mine = await fetchMyPages(user.id);
+        if (mine.length >= 3) {
+          alert('無料プランの上限（3ページ）に達しています。Proプランでは無制限に作成できます。');
+          setShowProModal(true);
+          return;
+        }
+      }
+
       // ランダムかつ読みやすいユニークなスラッグを生成
       const randomPart = Math.random().toString(36).substring(2, 7);
       const generatedSlug = `my3-${Date.now().toString(36).slice(-4)}-${randomPart}`;
+      const meta: any = user.user_metadata || {};
 
       const res = await saveMy3Page(
         {
@@ -294,24 +423,16 @@ export default function CreateMy3Page() {
           title: title.trim(),
           description: description.trim(),
           category: 'セレクト',
-          theme_id: selectedPlan === 'pro' ? proColorId : freeColorId,
+          theme_id: usePro ? proColorId : freeColorId,
           bg_color: previewStyles.bg,
           card_color: previewStyles.card,
           font_family: previewStyles.fontFamily,
           affiliate_tag: userAffiliateTag.trim() || undefined,
-          author_name: '匿名クリエイター',
-          author_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
-          is_pro: selectedPlan === 'pro',
+          author_name: meta.full_name || meta.name || 'クリエイター',
+          author_avatar: meta.avatar_url || meta.picture || '',
+          is_pro: usePro,
         },
-        items.map((it, idx) => ({
-          order_index: idx,
-          name: it.name.trim(),
-          comment: it.comment.trim(),
-          image_url: it.imageUrl,
-          amazon_url: it.amazonUrl.trim() || 'https://www.amazon.co.jp/',
-          asin: it.asin,
-          category: 'セレクト',
-        }))
+        itemRows
       );
 
       if (res.success && res.slug) {
@@ -325,6 +446,34 @@ export default function CreateMy3Page() {
       setIsPublishing(false);
     }
   };
+
+  // ログイン必須
+  if (authLoading) {
+    return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>読み込み中...</div>;
+  }
+  if (!user) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div style={{ background: '#fff', border: '1px solid #EAECEF', borderRadius: '24px', padding: '32px', textAlign: 'center', maxWidth: '440px' }}>
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '10px' }}>ログインしてMY 3を作ろう</h1>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.6 }}>
+            ページの作成・編集にはGoogleアカウントでのログインが必要です（無料）。
+          </p>
+          <button onClick={() => signInWithGoogle()} className="btn btn-primary" id="create-login-btn">
+            Googleでログイン
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (editError) {
+    return (
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px' }}>
+        <p>{editError}</p>
+        <Link href="/dashboard" className="btn btn-primary btn-sm">ダッシュボードへ</Link>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#F8F9FD', padding: '24px 0 100px' }}>
@@ -436,10 +585,55 @@ export default function CreateMy3Page() {
               border: '1px solid #EAECEF',
               boxShadow: 'var(--shadow-sm)',
             }}>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1C1C1E', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1C1C1E', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Icon name="edit_note" size={22} color="#4B7BEC" />
                 <span>リストのタイトル & 紹介文</span>
               </h2>
+
+              {/* 公式お題クイック選択チップ */}
+              <div style={{ marginBottom: '18px' }}>
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                  💡 公式お題から選んで書き始める（タップで自動入力）:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {PROMPT_TEMPLATES.map((tmpl, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setTitle(tmpl.title);
+                        setDescription(tmpl.description);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: '#F8F9FD',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        color: '#1C1C1E',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#EEF3FE';
+                        e.currentTarget.style.borderColor = '#4B7BEC';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#F8F9FD';
+                        e.currentTarget.style.borderColor = '#E2E8F0';
+                      }}
+                    >
+                      <span>{tmpl.emoji}</span>
+                      <span>{tmpl.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#1C1C1E', marginBottom: '6px' }}>
@@ -555,10 +749,10 @@ export default function CreateMy3Page() {
                     </button>
                   </div>
 
-                  {/* Amazon URL Input */}
+                  {/* Item / Content URL Input */}
                   <div style={{ marginBottom: '14px' }}>
                     <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                      Amazon 商品URL
+                      URL (Amazon商品 / YouTube / Spotify / Web記事など)
                     </label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input
@@ -567,11 +761,11 @@ export default function CreateMy3Page() {
                         onChange={(e) => handleItemChange(index, 'amazonUrl', e.target.value)}
                         onPaste={(e) => {
                           const pasted = e.clipboardData.getData('text');
-                          if (pasted && (pasted.includes('amazon') || pasted.includes('amzn.to') || pasted.includes('amzn.asia'))) {
+                          if (pasted && (pasted.startsWith('http://') || pasted.startsWith('https://'))) {
                             setTimeout(() => handleScrapeAmazon(index, pasted), 150);
                           }
                         }}
-                        placeholder="AmazonのURLを貼り付けると自動入力されます (amzn.to/ ...)"
+                        placeholder="URLを貼るとタイトルと画像が自動入力されます"
                         style={{
                           flex: 1,
                           padding: '10px 12px',
@@ -880,7 +1074,7 @@ export default function CreateMy3Page() {
                     }}>
                       {items.map((it, idx) => (
                         <div key={idx} style={{ height: '72px', position: 'relative' }}>
-                          <img src={it.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={it.imageUrl || PLACEHOLDER_IMG} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           <div style={{
                             position: 'absolute',
                             bottom: '3px',
@@ -1151,7 +1345,7 @@ export default function CreateMy3Page() {
                     </div>
 
                     <div
-                      onClick={() => setSelectedPlan('pro')}
+                      onClick={handleSelectPro}
                       style={{
                         padding: '14px',
                         borderRadius: '16px',
@@ -1404,7 +1598,7 @@ export default function CreateMy3Page() {
                       </p>
                       <button
                         type="button"
-                        onClick={() => setSelectedPlan('pro')}
+                        onClick={handleSelectPro}
                         className="btn btn-sm"
                         style={{ backgroundColor: '#E85A71', color: '#FFFFFF', fontWeight: 800, fontSize: '0.78rem' }}
                       >
@@ -1453,34 +1647,6 @@ export default function CreateMy3Page() {
                       })}
                     </div>
                   )}
-                </div>
-
-                {/* Optional Affiliate Tag */}
-                <div style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '24px',
-                  padding: '20px 24px',
-                  border: '1px solid #EAECEF',
-                  boxShadow: 'var(--shadow-sm)',
-                }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>
-                    あなたのアソシエイトID（任意）
-                  </label>
-                  <input
-                    type="text"
-                    value={userAffiliateTag}
-                    onChange={(e) => setUserAffiliateTag(e.target.value)}
-                    placeholder="例: yourname-22 (空欄の場合は公式IDが適用されます)"
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      borderRadius: '10px',
-                      background: '#F8F9FD',
-                      border: '1px solid #CBD5E1',
-                      fontSize: '0.82rem',
-                      boxSizing: 'border-box',
-                    }}
-                  />
                 </div>
 
                 {/* Final Publish Button */}

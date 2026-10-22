@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { ExternalLink, Users, Tag, ShoppingCart } from 'lucide-react';
+import { ExternalLink, Tag, ShoppingCart, Play, Headphones, Globe } from 'lucide-react';
 import { My5Item, ThemeId } from '@/types';
 import { buildAffiliateUrl } from '@/themes';
+import { incrementItemClick } from '@/lib/supabase';
 
 interface Props {
   item: My5Item;
@@ -14,10 +14,70 @@ interface Props {
   cardColor?: string;
 }
 
-export default function ItemCard({ item, index, themeId, authorIsPro, cardColor }: Props) {
-  const { url: affiliateUrl, appliedTag, isPlatformTag } = buildAffiliateUrl(item.amazonUrl, item.affiliateTag);
-  const itemSlug = encodeURIComponent(item.name.replace(/\s+/g, '-'));
+function getLinkMeta(rawUrl: string, affiliateUrl: string) {
+  const urlLower = (rawUrl || '').toLowerCase();
+
+  if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) {
+    return {
+      type: 'youtube',
+      badge: 'YouTube',
+      label: 'YouTubeで見る',
+      url: rawUrl,
+      icon: Play,
+      btnStyle: {
+        background: '#FF0000',
+        color: '#FFFFFF',
+      },
+    };
+  }
+
+  if (urlLower.includes('spotify.com')) {
+    return {
+      type: 'spotify',
+      badge: 'Spotify',
+      label: 'Spotifyで聴く',
+      url: rawUrl,
+      icon: Headphones,
+      btnStyle: {
+        background: '#1DB954',
+        color: '#FFFFFF',
+      },
+    };
+  }
+
+  const isAmazon = urlLower.includes('amazon') || urlLower.includes('amzn.to') || urlLower.includes('amzn.asia');
+  if (isAmazon) {
+    return {
+      type: 'amazon',
+      badge: 'Amazon',
+      label: 'Amazonで詳細を見る',
+      url: affiliateUrl,
+      icon: ShoppingCart,
+      btnStyle: {
+        background: '#FF9900',
+        color: '#111827',
+      },
+    };
+  }
+
+  return {
+    type: 'web',
+    badge: 'Web',
+    label: 'リンク先を見る',
+    url: rawUrl,
+    icon: Globe,
+    btnStyle: {
+      background: '#4B7BEC',
+      color: '#FFFFFF',
+    },
+  };
+}
+
+export default function ItemCard({ item, index, themeId, cardColor }: Props) {
+  const { url: affiliateUrl } = buildAffiliateUrl(item.amazonUrl, item.affiliateTag);
   const isDarkCard = cardColor === '#1F2937' || cardColor === '#2C2623' || cardColor === '#111827';
+  const meta = getLinkMeta(item.amazonUrl, affiliateUrl);
+  const ActionIcon = meta.icon;
 
   return (
     <article 
@@ -39,7 +99,6 @@ export default function ItemCard({ item, index, themeId, authorIsPro, cardColor 
       {/* Top Header: Solid Number Badge & Tag */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Black solid badge (irop style) */}
           <div style={{
             width: '32px',
             height: '32px',
@@ -63,20 +122,20 @@ export default function ItemCard({ item, index, themeId, authorIsPro, cardColor 
           )}
         </div>
 
-        {/* Affiliate Tag Badge */}
+        {/* Media / Platform Badge */}
         <div style={{
           fontSize: '0.72rem',
           display: 'flex',
           alignItems: 'center',
           gap: '4px',
-          color: isPlatformTag ? 'var(--text-muted)' : '#2ECC71',
-          background: isPlatformTag ? '#F2F4F8' : '#EBF9F1',
+          color: meta.type === 'amazon' ? '#D97706' : meta.type === 'youtube' ? '#DC2626' : meta.type === 'spotify' ? '#059669' : '#4B7BEC',
+          background: meta.type === 'amazon' ? '#FEF3C7' : meta.type === 'youtube' ? '#FEE2E2' : meta.type === 'spotify' ? '#D1FAE5' : '#EEF3FE',
           padding: '4px 10px',
           borderRadius: 'var(--radius-pill)',
           fontWeight: 700,
-        }} title={isPlatformTag ? '運営公式サポートID適用中' : 'ユーザー自身のアソシエイトID適用中'}>
+        }}>
           <Tag size={12} />
-          <span>{isPlatformTag ? '公式リンク' : '公認パートナー'}</span>
+          <span>{meta.badge}</span>
         </div>
       </div>
 
@@ -92,22 +151,26 @@ export default function ItemCard({ item, index, themeId, authorIsPro, cardColor 
         alignItems: 'center',
         justifyContent: 'center',
       }}>
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            transition: 'transform 0.4s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.04)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        />
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transition: 'transform 0.4s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.04)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          />
+        ) : (
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>画像なし</div>
+        )}
       </div>
 
       {/* Item Title & Passionate One-Word Review */}
@@ -122,22 +185,24 @@ export default function ItemCard({ item, index, themeId, authorIsPro, cardColor 
         </h3>
 
         {/* The "One-word Passionate Review" */}
-        <div style={{
-          padding: '14px 16px',
-          borderRadius: '16px',
-          backgroundColor: isDarkCard ? '#111827' : '#F7F8FC',
-          borderLeft: '4px solid #4B7BEC',
-        }}>
-          <p style={{
-            fontSize: '0.9rem',
-            lineHeight: 1.6,
-            color: isDarkCard ? '#E2E8F0' : '#2C3E50',
-            margin: 0,
-            fontWeight: 500,
+        {item.comment && (
+          <div style={{
+            padding: '14px 16px',
+            borderRadius: '16px',
+            backgroundColor: isDarkCard ? '#111827' : '#F7F8FC',
+            borderLeft: '4px solid #4B7BEC',
           }}>
-            「{item.comment}」
-          </p>
-        </div>
+            <p style={{
+              fontSize: '0.9rem',
+              lineHeight: 1.6,
+              color: isDarkCard ? '#E2E8F0' : '#2C3E50',
+              margin: 0,
+              fontWeight: 500,
+            }}>
+              「{item.comment}」
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Action Row */}
@@ -148,12 +213,13 @@ export default function ItemCard({ item, index, themeId, authorIsPro, cardColor 
         paddingTop: '8px',
         borderTop: '1px solid var(--border-light)',
       }}>
-        {/* Amazon Purchase Button */}
+        {/* Dynamic Action Button */}
         <a
-          href={affiliateUrl}
+          href={meta.url}
           target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-amazon"
+          rel={meta.type === 'amazon' ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
+          onClick={() => { if (item.id && !item.id.startsWith('item-')) incrementItemClick(item.id); }}
+          className="btn"
           style={{
             width: '100%',
             borderRadius: 'var(--radius-pill)',
@@ -162,38 +228,16 @@ export default function ItemCard({ item, index, themeId, authorIsPro, cardColor 
             justifyContent: 'center',
             gap: '8px',
             fontSize: '0.92rem',
+            fontWeight: 800,
+            padding: '12px 18px',
+            ...meta.btnStyle,
           }}
-          id={`buy-amazon-${item.id || index}`}
+          id={`open-link-${item.id || index}`}
         >
-          <ShoppingCart size={16} />
-          <span>Amazonで詳細・価格を見る</span>
+          <ActionIcon size={16} />
+          <span>{meta.label}</span>
           <ExternalLink size={14} />
         </a>
-
-        {/* Item-Centric Cross-Link */}
-        <Link
-          href={`/items/${item.asin || itemSlug}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            fontSize: '0.8rem',
-            color: 'var(--text-muted)',
-            padding: '6px',
-            transition: 'color 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = '#4B7BEC';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = 'var(--text-muted)';
-          }}
-          id={`cross-link-${item.id || index}`}
-        >
-          <Users size={14} />
-          <span>このアイテムをMY 3に入れている他の人を見る</span>
-        </Link>
       </div>
     </article>
   );

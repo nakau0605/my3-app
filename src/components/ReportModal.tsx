@@ -3,19 +3,33 @@
 import React, { useState } from 'react';
 import { X, AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react';
 
+import { submitContactMessage } from '@/lib/supabase';
+
 interface Props {
   pageTitle: string;
+  pageSlug?: string;
   onClose: () => void;
 }
 
-export default function ReportModal({ pageTitle, onClose }: Props) {
+export default function ReportModal({ pageTitle, pageSlug, onClose }: Props) {
   const [reason, setReason] = useState('copyright');
   const [details, setDetails] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSending(true);
+    setError('');
+    const res = await submitContactMessage({
+      kind: 'report:' + reason,
+      page_slug: pageSlug,
+      message: `対象: ${pageTitle}\n${details || '(詳細なし)'}`,
+    });
+    setSending(false);
+    if (res.success) setSubmitted(true);
+    else setError('送信に失敗しました。時間をおいて再度お試しください。');
   };
 
   return (
@@ -156,11 +170,13 @@ export default function ReportModal({ pageTitle, onClose }: Props) {
                 type="submit" 
                 className="btn btn-primary" 
                 style={{ flex: 1, background: '#DC2626' }}
+                disabled={sending}
                 id="submit-report-btn"
               >
-                通報を送信
+                {sending ? '送信中...' : '通報を送信'}
               </button>
             </div>
+            {error && <p style={{ color: '#F87171', fontSize: '0.8rem', marginTop: '10px' }}>{error}</p>}
           </form>
         )}
       </div>

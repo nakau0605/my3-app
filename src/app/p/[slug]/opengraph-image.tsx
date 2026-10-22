@@ -1,6 +1,5 @@
 import { ImageResponse } from 'next/og';
 import { fetchMy3PageBySlug } from '@/lib/supabase';
-import { MOCK_PAGES } from '@/data/mockData';
 
 export const runtime = 'nodejs';
 export const alt = 'MY 3 偏愛3選シェア';
@@ -33,16 +32,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     console.error('OGP Fetch Error:', err);
   }
 
-  // フォールバック（モックデータ）
-  if (items.length === 0) {
-    const mock = MOCK_PAGES.find((p) => p.slug === slug) || MOCK_PAGES[0];
-    title = mock.title;
-    authorName = mock.author.name;
-    items = mock.items.slice(0, 3).map((it) => ({
-      name: it.name,
-      imageUrl: it.imageUrl,
-    }));
-  }
+  // データが無い場合は汎用のプレースホルダーで埋める（下の穴埋め処理）
 
   // 3つに満たない場合の穴埋め
   while (items.length < 3) {

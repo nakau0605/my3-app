@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { fetchMy3PageBySlug } from '@/lib/supabase';
-import { MOCK_PAGES } from '@/data/mockData';
+import { notFound } from 'next/navigation';
 
 export async function generateMetadata({
   params,
@@ -11,7 +11,7 @@ export async function generateMetadata({
   const slug = resolvedParams.slug;
 
   let title = 'あなたの偏愛3選';
-  let description = '偏愛3選が、誰かの買い物になり、あなたの収益になる。MY 3（マイスリー）';
+  let description = '3つのアイテムで、あなたを語る。あなたの偏愛が、誰かの次の熱狂になる。MY 3（マイスリー）';
   let authorName = 'クリエイター';
 
   try {
@@ -21,14 +21,11 @@ export async function generateMetadata({
       description = dbData.page.description || description;
       authorName = dbData.page.author_name || authorName;
     } else {
-      const mock = MOCK_PAGES.find((p) => p.slug === slug);
-      if (mock) {
-        title = mock.title;
-        description = mock.description;
-        authorName = mock.author.name;
-      }
+      notFound();
     }
   } catch (err) {
+    // notFound() は例外を投げるため再スロー
+    if (err && typeof err === 'object' && 'digest' in err) throw err;
     console.error('Metadata fetch error:', err);
   }
 

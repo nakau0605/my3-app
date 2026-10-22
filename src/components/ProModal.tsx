@@ -3,20 +3,30 @@
 import React, { useState } from 'react';
 import { X, Check, Sparkles, Zap, Shield, ArrowRight, CreditCard } from 'lucide-react';
 
+import { signInWithGoogle } from '@/lib/supabase';
+import { useAuth } from '@/lib/useAuth';
+
 interface Props {
   onClose: () => void;
 }
 
 export default function ProModal({ onClose }: Props) {
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [success] = useState(false);
+  const { user } = useAuth();
 
   const STRIPE_PAYMENT_URL = 'https://buy.stripe.com/fZufZh1yn6w78A0gNe8AE00';
 
-  const handleStripeCheckout = () => {
+  const handleStripeCheckout = async () => {
     setLoading(true);
-    // Stripe公式決済画面へリダイレクト
-    window.location.href = STRIPE_PAYMENT_URL;
+    if (!user) {
+      // 購入者とアカウントを紐づけるため先にログイン
+      await signInWithGoogle();
+      return;
+    }
+    const params = new URLSearchParams({ client_reference_id: user.id });
+    if (user.email) params.set('prefilled_email', user.email);
+    window.location.href = `${STRIPE_PAYMENT_URL}?${params.toString()}`;
   };
 
   return (
@@ -180,11 +190,11 @@ export default function ProModal({ onClose }: Props) {
               id="stripe-checkout-btn"
             >
               <CreditCard size={18} />
-              <span>{loading ? 'Stripe決済ページへ移動中...' : 'StripeでProに登録する（¥480/月）'}</span>
+              <span>{loading ? '移動中...' : user ? 'StripeでProに登録する（¥480/月）' : 'GoogleでログインしてProに登録'}</span>
               <ArrowRight size={18} />
             </button>
             <p style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '10px' }}>
-              ※ クレジットカード決済（Stripe Billing）。ワンクリックでいつでも即時解約可能です。
+              ※ クレジットカード決済（Stripe）。解約はダッシュボードの「プラン管理」からいつでもできます。決済後、Pro機能が反映されるまで数分かかる場合があります。
             </p>
           </div>
         )}

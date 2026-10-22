@@ -22,14 +22,18 @@ import CollageOGPModal from '@/components/CollageOGPModal';
 import ReportModal from '@/components/ReportModal';
 import ProModal from '@/components/ProModal';
 import Icon from '@/components/Icon';
-import { fetchMy3PageBySlug, incrementPageViews } from '@/lib/supabase';
+import { fetchMy3PageBySlug, incrementPageViews, deleteMy3Page } from '@/lib/supabase';
+import { useAuth } from '@/lib/useAuth';
 
 export default function UserMy5Page({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
-  const fallbackPage = MOCK_PAGES.find(p => p.slug === resolvedParams.slug) || MOCK_PAGES[0];
+  // 型の土台としてのみ使用（表示データはすべてDB由来）
+  const shapeBase = MOCK_PAGES[0];
+  const { user } = useAuth();
 
   const [dbData, setDbData] = useState<{ page: any; items: any[] } | null>(null);
-  const [activeTheme, setActiveTheme] = useState<ThemeId>(fallbackPage.themeId);
+  const [notFoundState, setNotFoundState] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<ThemeId>('minimal');
   const [showOgpModal, setShowOgpModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
@@ -39,45 +43,73 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
     async function loadData() {
       try {
         const result = await fetchMy3PageBySlug(resolvedParams.slug);
-        if (isMounted && result) {
+        if (!isMounted) return;
+        if (result) {
           setDbData(result);
           if (result.page.theme_id && THEMES[result.page.theme_id as ThemeId]) {
             setActiveTheme(result.page.theme_id as ThemeId);
           }
           incrementPageViews(resolvedParams.slug);
+        } else {
+          setNotFoundState(true);
         }
       } catch (err) {
         console.error(err);
+        if (isMounted) setNotFoundState(true);
       }
     }
     loadData();
     return () => { isMounted = false; };
   }, [resolvedParams.slug]);
 
-  // DBデータがあればDBから、無ければフォールバックモックデータ
-  const pageTitle = dbData?.page ? dbData.page.title : fallbackPage.title;
-  const pageDescription = dbData?.page ? dbData.page.description : fallbackPage.description;
-  const pageCategory = dbData?.page ? dbData.page.category : fallbackPage.category;
-  const authorName = dbData?.page ? dbData.page.author_name : fallbackPage.author.name;
-  const authorAvatar = dbData?.page ? dbData.page.author_avatar : fallbackPage.author.avatarUrl;
-  const isPro = dbData?.page ? dbData.page.is_pro : fallbackPage.author.isPro;
-  const viewsCount = dbData?.page ? (dbData.page.views || 0) : fallbackPage.views;
-  const clicksCount = dbData?.page ? (dbData.page.clicks || 0) : fallbackPage.clicks;
-  const customBg = dbData?.page?.bg_color || fallbackPage.customColors?.backgroundColor;
-  const customCard = dbData?.page?.card_color || fallbackPage.customColors?.cardColor;
+  if (!dbData) {
+    return (
+      <div style={{ minHeight: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+        {notFoundState ? (
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: '1.4rem', marginBottom: '12px' }}>ページが見つかりません</h1>
+            <Link href="/" className="btn btn-primary btn-sm">トップへ戻る</Link>
+          </div>
+        ) : (
+          <span>読み込み中...</span>
+        )}
+      </div>
+    );
+  }
 
-  const displayItems: My5Item[] = dbData?.items && dbData.items.length > 0
-    ? dbData.items.map((it, idx) => ({
-        id: it.id || `item-${idx}`,
-        name: it.name,
-        comment: it.comment,
-        imageUrl: it.image_url,
-        amazonUrl: it.amazon_url,
-        asin: it.asin || '',
-        category: it.category || 'セレクト',
-        affiliateTag: dbData.page.affiliate_tag,
-      }))
-    : fallbackPage.items;
+  const isOwner = !!user && dbData.page.user_id === user.id;
+
+  const handleDelete = async () => {
+    if (!window.confirm('このMY 3ページを削除します。元に戻せません。よろしいですか？')) return;
+    const res = await deleteMy3Page(dbData.page.id);
+    if (res.success) {
+      window.location.href = '/dashboard';
+    } else {
+      alert('削除に失敗しました: ' + res.error);
+    }
+  };
+
+  const pageTitle = dbData.page.title;
+  const pageDescription = dbData.page.description;
+  const pageCategory = dbData.page.category;
+  const authorName = dbData.page.author_name;
+  const authorAvatar = dbData.page.author_avatar || '/icon.png';
+  const isPro = !!dbData.page.is_pro;
+  const viewsCount = dbData.page.views || 0;
+  const clicksCount = (dbData.items || []).reduce((s: number, it: any) => s + (it.clicks || 0), 0) || (dbData.page.clicks || 0);
+  const customBg = dbData.page.bg_color;
+  const customCard = dbData.page.card_color;
+
+  const displayItems: My5Item[] = dbData.items.map((it, idx) => ({
+    id: it.id || `item-${idx}`,
+    name: it.name,
+    comment: it.comment,
+    imageUrl: it.image_url,
+    amazonUrl: it.amazon_url,
+    asin: it.asin || '',
+    category: it.category || 'セレクト',
+    affiliateTag: dbData.page.affiliate_tag,
+  }));
 
   return (
     <div 
@@ -164,6 +196,16 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
 
           {/* Share & Report Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isOwner && (
+              <>
+                <Link href={`/create?edit=${dbData.page.slug}`} className="btn btn-primary btn-sm" style={{ fontSize: '0.8rem', padding: '6px 14px' }} id="owner-edit-btn">
+                  編集
+                </Link>
+                <button onClick={handleDelete} className="btn btn-sm" style={{ fontSize: '0.8rem', padding: '6px 14px', color: '#E85A71', border: '1px solid #E85A71', background: '#fff' }} id="owner-delete-btn">
+                  削除
+                </button>
+              </>
+            )}
             <button
               onClick={() => setShowOgpModal(true)}
               className="btn btn-coral btn-sm"
@@ -398,7 +440,7 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
             あなただけの「偏愛3選」を作りませんか？
           </h3>
           <p style={{ fontSize: '0.88rem', opacity: 0.95, maxWidth: '440px', margin: '0 auto 24px', lineHeight: 1.6 }}>
-            厳選3アイテムを選ぶだけ。あなたのこだわりが誰かの買い物になり、紹介料として収益化できます。
+            厳選3アイテムを選ぶだけ。あなたのこだわりや審美眼が美しくまとまり、誰かの次の熱狂になります。
           </p>
           <Link href="/create" className="btn btn-coral" id="bottom-create-btn" style={{ minWidth: '220px' }}>
             <Sparkles size={16} />
@@ -412,13 +454,13 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
       {showOgpModal && (
         <CollageOGPModal
           pageData={{
-            ...fallbackPage,
+            ...shapeBase,
             title: pageTitle,
             description: pageDescription,
             category: pageCategory,
             items: displayItems,
             author: {
-              ...fallbackPage.author,
+              ...shapeBase.author,
               name: authorName,
               avatarUrl: authorAvatar,
               isPro: isPro,
@@ -431,6 +473,7 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
       {showReportModal && (
         <ReportModal
           pageTitle={pageTitle}
+          pageSlug={resolvedParams.slug}
           onClose={() => setShowReportModal(false)}
         />
       )}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Compass, 
@@ -14,10 +14,48 @@ import {
   ArrowUpDown,
   Tag
 } from 'lucide-react';
-import { MOCK_PAGES } from '@/data/mockData';
 import { THEMES } from '@/themes';
+import { fetchRecentMy3Pages } from '@/lib/supabase';
+
+interface ExplorePageItem {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  themeId: keyof typeof THEMES;
+  views: number;
+  clicks: number;
+  createdAt: string;
+  items: Array<{ id: string; name: string; comment: string; imageUrl: string }>;
+  author: { name: string; avatarUrl: string; handle: string; isPro: boolean };
+}
 
 export default function ExplorePage() {
+  const [allPages, setAllPages] = useState<ExplorePageItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetchRecentMy3Pages(100).then((rows) => {
+      setAllPages(
+        rows.map((p) => ({
+          id: p.id,
+          slug: p.slug,
+          title: p.title,
+          description: p.description,
+          category: p.category,
+          themeId: (THEMES[p.theme_id as keyof typeof THEMES] ? p.theme_id : 'sleek') as keyof typeof THEMES,
+          views: p.views || 0,
+          clicks: (p.items || []).reduce((s, it) => s + (it.clicks || 0), 0),
+          createdAt: p.created_at,
+          items: (p.items || []).map((it) => ({ id: it.id, name: it.name, comment: it.comment, imageUrl: it.image_url })),
+          author: { name: p.author_name, avatarUrl: p.author_avatar || '/icon.png', handle: p.slug, isPro: !!p.is_pro },
+        }))
+      );
+      setLoaded(true);
+    });
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [sortBy, setSortBy] = useState<'recommended' | 'newest' | 'views' | 'clicks'>('recommended');
@@ -37,7 +75,7 @@ export default function ExplorePage() {
   ];
 
   const filteredPages = useMemo(() => {
-    return MOCK_PAGES.filter((page) => {
+    return allPages.filter((page) => {
       // Category filter
       if (selectedCategory !== 'ALL' && page.category !== selectedCategory) {
         return false;
@@ -60,7 +98,7 @@ export default function ExplorePage() {
       if (sortBy === 'clicks') return b.clicks - a.clicks;
       return 0; // recommended default
     });
-  }, [selectedCategory, searchQuery, sortBy]);
+  }, [allPages, selectedCategory, searchQuery, sortBy]);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#F8F9FD', padding: '36px 0 100px' }}>
@@ -380,7 +418,7 @@ export default function ExplorePage() {
             border: '1px solid #EAECEF',
           }}>
             <p style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1C1C1E', marginBottom: '8px' }}>
-              該当する偏愛3選が見つかりませんでした
+              {loaded ? '該当する偏愛3選がまだありません' : '読み込み中...'}
             </p>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
               別のキーワードを試すか、あなた自身の「偏愛3選」を投稿してみませんか？

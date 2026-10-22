@@ -54,7 +54,7 @@ export default function HomePage() {
               category: p.category || '総合',
               themeId: validTheme,
               views: p.views || 0,
-              clicks: p.clicks || 0,
+              clicks: (p.items || []).reduce((s, it) => s + (it.clicks || 0), 0),
               createdAt: p.created_at,
               customColors: {
                 backgroundColor: p.bg_color,
@@ -102,11 +102,8 @@ export default function HomePage() {
     '健康 & ワーク',
   ];
 
-  // DBの新規投稿とモックデータをマージ（DBの最新投稿が一番上に表示される）
-  const combinedPages = [
-    ...dbPages,
-    ...MOCK_PAGES.filter(mp => !dbPages.some(dp => dp.slug === mp.slug)),
-  ];
+  // DBの実投稿のみ表示（最新が先頭）
+  const combinedPages = dbPages;
 
   // 編集部厳選の「注目のMY 3」（トップ4件）
   const featuredPages = combinedPages.slice(0, 4);
@@ -176,8 +173,8 @@ export default function HomePage() {
               letterSpacing: '0.28em',
               whiteSpace: 'nowrap',
             }}>
-              <span style={{ display: 'inline-block' }}>偏愛の３選が</span>
-              <span style={{ display: 'inline-block' }}>誰かの買い物になる</span>
+              <span style={{ display: 'inline-block' }}>３つのアイテムで</span>
+              <span style={{ display: 'inline-block' }}>あなたを語る</span>
             </div>
 
             {/* Hero Main Graphic & Pitch */}
@@ -203,7 +200,7 @@ export default function HomePage() {
                   color: '#1C1C1E',
                 }}>
                   3つ選ぶだけで、<br />
-                  <span style={{ color: '#E85A71' }}>あなただけのセレクトショップ</span>が完成。
+                  <span style={{ color: '#E85A71' }}>あなたのセンスが伝わるショーケース</span>が完成。
                 </h1>
 
                 {/* 3-Item Miniature Preview Large Cards */}
@@ -933,8 +930,8 @@ export default function HomePage() {
                   本当に毎日使っているもの、お金をかけてよかったもの。そんな等身大の「偏愛」こそが、誰かにとって最も信頼できる買い物情報になります。
                 </p>
                 <p>
-                  複雑なアフィリエイト設定やブログのメンテナンスはすべてシステムに任せて、<br />
-                  あなたはお気に入りの3つを選ぶだけ。
+                  面倒なブログ開設やリンク管理の手間は一切不要。<br />
+                  あなたのお気に入りの3つを選ぶだけで、美しい1枚のページにまとまります。
                 </p>
               </div>
 
@@ -1124,10 +1121,10 @@ export default function HomePage() {
                 03
               </span>
               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '6px 0 10px' }}>
-                アフィリエイトID自動補完
+                スマートな自動リンク生成
               </h3>
               <p style={{ fontSize: '0.85rem', lineHeight: 1.6, opacity: 0.9, maxWidth: '280px' }}>
-                自身のアソシエイトIDはもちろん、空欄でも運営IDが自動補完され、規約違反やリンク切れゼロ。
+                URLを貼るだけで画像やタイトルを自動取得。リンク切れの心配なく、すっきりスマートにまとまります。
               </p>
             </div>
 
@@ -1187,7 +1184,7 @@ export default function HomePage() {
                   STEP 01
                 </span>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '2px 0 4px' }}>
-                  Amazonから5つの偏愛アイテムを選ぶ
+                  お気に入りの3つのアイテムを選ぶ
                 </h3>
                 <p style={{ fontSize: '0.82rem', opacity: 0.9, margin: 0, lineHeight: 1.5 }}>
                   URLをコピーして貼るだけ。画像と商品名が自動でセットされます。
@@ -1261,10 +1258,10 @@ export default function HomePage() {
                   STEP 03
                 </span>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '2px 0 4px' }}>
-                  SNSプロフィールに貼って収益化
+                  SNSプロフィールに貼ってシェア
                 </h3>
                 <p style={{ fontSize: '0.82rem', opacity: 0.9, margin: 0, lineHeight: 1.5 }}>
-                  自動生成された美しいOGP画像とともにXやインスタでシェア。購入されたら紹介料が発生します。
+                  自動生成された美しいOGP画像とともにXやインスタでシェア。あなたのこだわりが、誰かの次の熱狂になります。
                 </p>
               </div>
             </div>
@@ -1377,7 +1374,7 @@ export default function HomePage() {
                   ¥480 <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>/ 月（税込）</span>
                 </div>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-                  デザインを整えて購入率を高め、本格的に収益化したい方へ。
+                  デザインをさらに極め、自身のこだわりを最高のクオリティで表現したい方へ。
                 </p>
 
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
