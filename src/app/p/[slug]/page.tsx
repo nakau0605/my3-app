@@ -455,6 +455,8 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
         <CollageOGPModal
           pageData={{
             ...shapeBase,
+            id: dbData.page.id,
+            slug: resolvedParams.slug,
             title: pageTitle,
             description: pageDescription,
             category: pageCategory,

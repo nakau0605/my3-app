@@ -31,6 +31,7 @@ export async function generateMetadata({
 
   const fullTitle = `${title} | by ${authorName} - MY 3`;
   const pageUrl = `https://www.my3select.jp/p/${slug}`;
+  const ogImageUrl = `https://www.my3select.jp/p/${slug}/opengraph-image`;
 
   return {
     title: fullTitle,
@@ -45,11 +46,20 @@ export async function generateMetadata({
       siteName: 'MY 3（マイスリー）',
       type: 'article',
       locale: 'ja_JP',
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: fullTitle,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: fullTitle,
       description: description,
+      images: [ogImageUrl],
     },
   };
 }
