@@ -80,138 +80,172 @@ export default function CollageOGPModal({ pageData, onClose }: Props) {
           X（Twitter）等でシェアした際、3つのアイテムが自動で美しくワイドにコラージュされて表示されます。
         </p>
 
-        {/* 3-Item Collage Preview Graphic */}
+        {/* 3-Item Collage Preview Graphic (どう森ウィジェット風 × オーガニッククラフト) */}
         <div style={{
           width: '100%',
           aspectRatio: '1.91 / 1',
-          background: 'linear-gradient(135deg, #1E1B4B 0%, #311042 100%)',
-          borderRadius: '16px',
+          background: 'linear-gradient(145deg, #88B2CE 0%, #6E97B1 50%, #527A93 100%)',
+          borderRadius: '24px',
           overflow: 'hidden',
-          border: '2px solid rgba(255, 255, 255, 0.15)',
-          boxShadow: '0 12px 30px rgba(0,0,0,0.4)',
+          border: '2px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: '0 12px 30px rgba(45, 75, 95, 0.3)',
           position: 'relative',
-          padding: '16px',
+          padding: '12px 16px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
         }}>
-          {/* OGP Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{
-                  background: 'var(--brand-gradient)',
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                }}>MY 3</span>
-                <span style={{ color: '#E2E8F0', fontSize: '0.8rem', fontWeight: 600 }}>
-                  @{pageData.author.handle}
-                </span>
-              </div>
-              <h4 style={{
-                color: '#FFFFFF',
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                lineHeight: 1.3,
-                maxWidth: '420px',
-                textShadow: '0 2px 4px rgba(0,0,0,0.6)',
-              }}>
-                {pageData.title}
-              </h4>
-            </div>
-
-            <div style={{
-              background: 'rgba(255,255,255,0.15)',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              backdropFilter: 'blur(8px)',
-              fontSize: '0.7rem',
-              color: '#fff',
-              fontWeight: 700,
-            }}>
-              偏愛3選
-            </div>
-          </div>
-
-          {/* 3 Items Collage Row */}
+          {/* Inner Widget Canvas */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '12px',
-            alignItems: 'center',
-            marginTop: '12px',
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#FAF5EC',
+            borderRadius: '18px',
+            padding: '12px 16px',
+            border: '2px solid #E6DCCD',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}>
-            {pageData.items.slice(0, 3).map((item, idx) => (
-              <div key={item.id || idx} style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: '12px',
-                padding: '8px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                position: 'relative',
-              }}>
+            {/* OGP Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <div style={{
-                  position: 'absolute',
-                  top: '-6px',
-                  left: '-4px',
-                  background: '#0F172A',
-                  color: '#38BDF8',
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '50%',
-                  fontSize: '0.7rem',
-                  fontWeight: 800,
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '8px',
+                  backgroundColor: '#E76F51',
+                  color: '#FAF5EC',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: '1px solid #38BDF8',
+                  fontWeight: 900,
+                  fontSize: '0.85rem',
                 }}>
-                  {idx + 1}
+                  3
                 </div>
-                <div style={{
-                  width: '100%',
-                  height: '80px',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                  background: '#F1F5F9',
-                }}>
-                  <img
-                    src={item.imageUrl}
-                    alt={item.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </div>
-                <p style={{
+                <span style={{ color: '#3A2E2B', fontSize: '0.95rem', fontWeight: 900 }}>MY 3</span>
+                <span style={{
+                  background: '#D8F3DC',
+                  border: '1px solid #B7E4C7',
+                  padding: '1px 6px',
+                  borderRadius: '12px',
                   fontSize: '0.65rem',
-                  color: '#0F172A',
-                  fontWeight: 700,
-                  marginTop: '4px',
-                  textAlign: 'center',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  width: '100%',
+                  color: '#2D6A4F',
+                  fontWeight: 800,
                 }}>
-                  {item.name}
-                </p>
+                  偏愛コレクション
+                </span>
               </div>
-            ))}
-          </div>
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            alignItems: 'center',
-            marginTop: '8px',
-            fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.7)',
-          }}>
-            my5.app/@{pageData.author.handle}
+              <div style={{
+                background: '#F1E8DC',
+                border: '1.5px dashed #C8B6A2',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '0.68rem',
+                color: '#6B5446',
+                fontWeight: 700,
+              }}>
+                ⚓ by {pageData.author.name}
+              </div>
+            </div>
+
+            {/* Title */}
+            <h4 style={{
+              color: '#342622',
+              fontSize: '1rem',
+              fontWeight: 900,
+              lineHeight: 1.25,
+              margin: '4px 0',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {pageData.title}
+            </h4>
+
+            {/* 3 Items Collage Row (どう森スロット風パステル) */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '8px',
+              alignItems: 'center',
+            }}>
+              {pageData.items.slice(0, 3).map((item, idx) => {
+                const colors = [
+                  { bg: '#EBF3F5', border: '#C5DCE3', badge: '#E07A5F' },
+                  { bg: '#FCF7EC', border: '#E9DEC7', badge: '#E9C46A' },
+                  { bg: '#EDF5F0', border: '#C9E2D2', badge: '#81B29A' },
+                ][idx % 3];
+                return (
+                  <div key={item.id || idx} style={{
+                    backgroundColor: colors.bg,
+                    border: `1.5px solid ${colors.border}`,
+                    borderRadius: '12px',
+                    padding: '6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                      <span style={{
+                        background: colors.badge,
+                        color: '#FAF5EC',
+                        fontSize: '0.58rem',
+                        fontWeight: 900,
+                        padding: '1px 5px',
+                        borderRadius: '6px',
+                      }}>
+                        #{idx + 1}
+                      </span>
+                      <span style={{ fontSize: '0.6rem', color: '#8E7B70' }}>✦</span>
+                    </div>
+                    <div style={{
+                      width: '100%',
+                      height: '56px',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      background: '#E5DCCE',
+                    }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <p style={{
+                      fontSize: '0.62rem',
+                      color: '#3A2E2B',
+                      fontWeight: 800,
+                      marginTop: '4px',
+                      marginBottom: 0,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      width: '100%',
+                    }}>
+                      {item.name}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '0.62rem',
+              color: '#8A776D',
+              fontWeight: 700,
+              paddingTop: '2px',
+              borderTop: '1px solid #EAE1D3',
+            }}>
+              <span>3つのアイテムで、あなたを語る</span>
+              <span>my3select.jp 🌿</span>
+            </div>
           </div>
         </div>
 
