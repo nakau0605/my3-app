@@ -12,7 +12,8 @@ import {
   Sparkles, 
   Layers,
   ArrowUpDown,
-  Tag
+  Tag,
+  Heart,
 } from 'lucide-react';
 import { THEMES } from '@/themes';
 import { fetchRecentMy3Pages } from '@/lib/supabase';
@@ -26,6 +27,7 @@ interface ExplorePageItem {
   themeId: keyof typeof THEMES;
   views: number;
   clicks: number;
+  likes: number;
   createdAt: string;
   items: Array<{ id: string; name: string; comment: string; imageUrl: string }>;
   author: { name: string; avatarUrl: string; handle: string; isPro: boolean };
@@ -47,6 +49,7 @@ export default function ExplorePage() {
           themeId: (THEMES[p.theme_id as keyof typeof THEMES] ? p.theme_id : 'sleek') as keyof typeof THEMES,
           views: p.views || 0,
           clicks: (p.items || []).reduce((s, it) => s + (it.clicks || 0), 0),
+          likes: p.likes || 0,
           createdAt: p.created_at,
           items: (p.items || []).map((it) => ({ id: it.id, name: it.name, comment: it.comment, imageUrl: it.image_url })),
           author: { name: p.author_name, avatarUrl: p.author_avatar || '/icon.png', handle: p.slug, isPro: !!p.is_pro },
@@ -58,7 +61,7 @@ export default function ExplorePage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [sortBy, setSortBy] = useState<'recommended' | 'newest' | 'views' | 'clicks'>('recommended');
+  const [sortBy, setSortBy] = useState<'recommended' | 'likes' | 'newest' | 'views' | 'clicks'>('recommended');
 
   const categories = [
     'ALL',
@@ -93,6 +96,7 @@ export default function ExplorePage() {
       }
       return true;
     }).sort((a, b) => {
+      if (sortBy === 'likes') return b.likes - a.likes;
       if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sortBy === 'views') return b.views - a.views;
       if (sortBy === 'clicks') return b.clicks - a.clicks;
@@ -185,6 +189,7 @@ export default function ExplorePage() {
                 id="explore-sort-select"
               >
                 <option value="recommended">おすすめ順</option>
+                <option value="likes">共感（スキ）が多い順</option>
                 <option value="views">閲覧数が多い順</option>
                 <option value="clicks">クリック数が多い順</option>
                 <option value="newest">新着順</option>
@@ -325,11 +330,28 @@ export default function ExplorePage() {
 
                 {/* Content */}
                 <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                  {/* Category & Pro */}
+                  {/* Category & Pro & Likes */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <span className="badge badge-tag" style={{ fontSize: '0.72rem' }}>
-                      {page.category}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="badge badge-tag" style={{ fontSize: '0.72rem' }}>
+                        {page.category}
+                      </span>
+                      {page.likes > 0 && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '3px',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          color: '#E85A71',
+                          backgroundColor: '#FFF0F3',
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                        }}>
+                          <Heart size={11} fill="#E85A71" /> {page.likes}
+                        </span>
+                      )}
+                    </div>
                     {page.author.isPro && (
                       <span className="badge badge-pro" style={{ fontSize: '0.65rem' }}>
                         <Crown size={12} /> PRO

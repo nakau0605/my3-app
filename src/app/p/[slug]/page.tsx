@@ -22,7 +22,7 @@ import CollageOGPModal from '@/components/CollageOGPModal';
 import ReportModal from '@/components/ReportModal';
 import ProModal from '@/components/ProModal';
 import Icon from '@/components/Icon';
-import { fetchMy3PageBySlug, incrementPageViews, deleteMy3Page } from '@/lib/supabase';
+import { fetchMy3PageBySlug, incrementPageViews, incrementPageLikes, deleteMy3Page } from '@/lib/supabase';
 import { useAuth } from '@/lib/useAuth';
 
 export default function UserMy5Page({ params }: { params: Promise<{ slug: string }> }) {
@@ -38,6 +38,11 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
   const [showReportModal, setShowReportModal] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
 
+  // 共感（スキ / いいね）状態
+  const [likesCount, setLikesCount] = useState<number>(0);
+  const [hasLiked, setHasLiked] = useState<boolean>(false);
+  const [isLiking, setIsLiking] = useState<boolean>(false);
+
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
@@ -46,6 +51,14 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
         if (!isMounted) return;
         if (result) {
           setDbData(result);
+          setLikesCount(result.page.likes || 0);
+
+          // 端末で既にスキを押したか判定
+          if (typeof window !== 'undefined') {
+            const likedKey = `my3_liked_${resolvedParams.slug}`;
+            setHasLiked(!!localStorage.getItem(likedKey));
+          }
+
           if (result.page.theme_id && THEMES[result.page.theme_id as ThemeId]) {
             setActiveTheme(result.page.theme_id as ThemeId);
           }
@@ -61,6 +74,30 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
     loadData();
     return () => { isMounted = false; };
   }, [resolvedParams.slug]);
+
+  // スキ（共感）を押したときの処理
+  const handleToggleLike = async () => {
+    if (hasLiked || isLiking) return;
+    setIsLiking(true);
+
+    // 楽観的更新
+    setLikesCount((prev) => prev + 1);
+    setHasLiked(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`my3_liked_${resolvedParams.slug}`, 'true');
+    }
+
+    try {
+      const updated = await incrementPageLikes(resolvedParams.slug);
+      if (updated !== null) {
+        setLikesCount(updated);
+      }
+    } catch (err) {
+      console.error('Like error:', err);
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   if (!dbData) {
     return (
@@ -318,13 +355,16 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <MousePointerClick size={14} /> {clicksCount.toLocaleString()} clicks
             </span>
+            <span style={{ fontSize: '0.8rem', color: '#E85A71', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+              <Heart size={14} fill={likesCount > 0 ? '#E85A71' : 'none'} /> {likesCount.toLocaleString()} スキ
+            </span>
           </div>
         </header>
 
         {/* Page Title & Philosophy */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '32px',
+          marginBottom: '24px',
           padding: '28px 24px',
           borderRadius: '28px',
           backgroundColor: customCard || '#FFFFFF',
@@ -363,6 +403,55 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
           </p>
         </div>
 
+        {/* Like / Sympathy Interactive Button */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '36px' }}>
+          <button
+            onClick={handleToggleLike}
+            disabled={hasLiked}
+            id="like-curation-btn"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 24px',
+              borderRadius: '999px',
+              backgroundColor: hasLiked ? '#FDF2F4' : '#FFFFFF',
+              color: hasLiked ? '#E85A71' : '#334155',
+              border: hasLiked ? '1.5px solid #FBCFE8' : '1.5px solid #CBD5E1',
+              boxShadow: hasLiked ? '0 4px 14px rgba(232, 90, 113, 0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
+              cursor: hasLiked ? 'default' : 'pointer',
+              fontWeight: 800,
+              fontSize: '0.92rem',
+              transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+              transform: isLiking ? 'scale(1.15)' : 'scale(1)',
+            }}
+          >
+            <Heart
+              size={18}
+              fill={hasLiked ? '#E85A71' : 'none'}
+              color="#E85A71"
+              style={{
+                transition: 'transform 0.2s ease',
+                transform: hasLiked ? 'scale(1.1)' : 'scale(1)',
+              }}
+            />
+            <span>{hasLiked ? '共感しました！' : 'この偏愛にスキ'}</span>
+            <span
+              style={{
+                backgroundColor: hasLiked ? '#E85A71' : '#F1F5F9',
+                color: hasLiked ? '#FFFFFF' : '#475569',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '0.8rem',
+                fontWeight: 900,
+                marginLeft: '2px',
+              }}
+            >
+              {likesCount}
+            </span>
+          </button>
+        </div>
+
         {/* The 3 Items List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {displayItems.slice(0, 3).map((item, index) => (
@@ -375,6 +464,62 @@ export default function UserMy5Page({ params }: { params: Promise<{ slug: string
               cardColor={customCard}
             />
           ))}
+        </div>
+
+        {/* End of Curation Reaction Box */}
+        <div style={{
+          marginTop: '36px',
+          padding: '28px',
+          borderRadius: '28px',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #EAECEF',
+          textAlign: 'center',
+          boxShadow: 'var(--shadow-sm)',
+        }}>
+          <p style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1C1C1E', margin: '0 0 14px' }}>
+            {authorName}さんの偏愛3選はいかがでしたか？
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleToggleLike}
+              disabled={hasLiked}
+              id="bottom-like-btn"
+              style={{
+                backgroundColor: hasLiked ? '#FDF2F4' : '#FFF0F2',
+                color: '#E85A71',
+                border: '1.5px solid #FBCFE8',
+                borderRadius: '999px',
+                padding: '10px 20px',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: hasLiked ? 'default' : 'pointer',
+              }}
+            >
+              <Heart size={18} fill={hasLiked ? '#E85A71' : 'none'} />
+              <span>{hasLiked ? '共感スキを送信済み' : 'このセレクトにスキを届ける'}</span>
+              <span style={{ backgroundColor: '#E85A71', color: '#FFF', padding: '1px 7px', borderRadius: '10px', fontSize: '0.75rem' }}>
+                {likesCount}
+              </span>
+            </button>
+            <button
+              onClick={() => setShowOgpModal(true)}
+              id="bottom-share-btn"
+              className="btn btn-secondary btn-sm"
+              style={{
+                borderRadius: '999px',
+                padding: '10px 20px',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Share2 size={16} />
+              <span>SNSでシェア</span>
+            </button>
+          </div>
         </div>
 
         {/* Banner Ad Section (Only for Free Plan) */}

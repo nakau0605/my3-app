@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   User,
+  Heart,
 } from 'lucide-react';
 import ProModal from '@/components/ProModal';
 import { useAuth } from '@/lib/useAuth';
@@ -48,6 +49,7 @@ export default function DashboardPage() {
   const pageClicks = (p: MyPage) => p.items.reduce((s, it) => s + (it.clicks || 0), 0);
   const totalViews = pages.reduce((a, p) => a + (p.views || 0), 0);
   const totalClicks = pages.reduce((a, p) => a + pageClicks(p), 0);
+  const totalLikes = pages.reduce((a, p) => a + (p.likes || 0), 0);
   const ctr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : '0.0';
 
   const handleCopy = (slug: string) => {
@@ -191,18 +193,28 @@ export default function DashboardPage() {
         </div>
 
         {/* KPI */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '36px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '36px' }}>
           <div style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>累計ページビュー（PV）</span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>累計PV</span>
               <div style={{ padding: '8px', borderRadius: '12px', background: '#EEF3FE', color: '#4B7BEC' }}><Eye size={20} /></div>
             </div>
             <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#1C1C1E', lineHeight: 1 }}>{totalViews.toLocaleString()}</div>
           </div>
           <div style={card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-              <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>Amazonリンクのクリック数</span>
-              <div style={{ padding: '8px', borderRadius: '12px', background: '#FDEEF0', color: '#E85A71' }}><MousePointerClick size={20} /></div>
+              <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>届いた共感（スキ）</span>
+              <div style={{ padding: '8px', borderRadius: '12px', background: '#FDEEF0', color: '#E85A71' }}><Heart size={20} fill="#E85A71" /></div>
+            </div>
+            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#E85A71', lineHeight: 1 }}>{totalLikes.toLocaleString()}</div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '10px', fontWeight: 600 }}>
+              読者からのリアクション
+            </div>
+          </div>
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+              <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>商品クリック数</span>
+              <div style={{ padding: '8px', borderRadius: '12px', background: '#FEF3C7', color: '#D97706' }}><MousePointerClick size={20} /></div>
             </div>
             <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#1C1C1E', lineHeight: 1 }}>{totalClicks.toLocaleString()}</div>
             <div style={{ fontSize: '0.8rem', color: '#2ECC71', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
@@ -210,7 +222,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div style={card}>
-            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px' }}>共感・パートナー反響</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '12px' }}>反響・パートナーシップ</div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px' }}>
               あなたの偏愛リストへの関心が高まっています。反響がさらに拡大すると、公認パートナーや収益化機能のアンロック案内が届きます。
             </p>
@@ -261,6 +273,7 @@ export default function DashboardPage() {
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1C1C1E', marginBottom: '6px' }}>{page.title}</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.85rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                       <span>{(page.views || 0).toLocaleString()} PV</span>
+                      <span style={{ color: '#E85A71', fontWeight: 600 }}>❤️ {(page.likes || 0).toLocaleString()} スキ</span>
                       <span>{pageClicks(page).toLocaleString()} クリック</span>
                       <span>my3select.jp/p/{page.slug}</span>
                     </div>

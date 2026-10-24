@@ -24,6 +24,7 @@ export interface DbPage {
   author_avatar: string;
   views: number;
   clicks: number;
+  likes?: number;
   is_pro: boolean;
   created_at: string;
 }
@@ -265,6 +266,24 @@ export async function incrementItemClick(itemId: string) {
     await supabase.rpc('increment_item_click', { p_item_id: itemId });
   } catch (err) {
     console.error('Increment click error:', err);
+  }
+}
+
+/**
+ * ページの共感（スキ / いいね）数をインクリメント（RPC経由）
+ */
+export async function incrementPageLikes(slug: string): Promise<number | null> {
+  if (!supabase || !slug) return null;
+  try {
+    const { data, error } = await supabase.rpc('increment_page_likes', { p_slug: slug });
+    if (error) {
+      console.warn('incrementPageLikes error:', error);
+      return null;
+    }
+    return typeof data === 'number' ? data : null;
+  } catch (err) {
+    console.error('RPC increment_page_likes exception:', err);
+    return null;
   }
 }
 

@@ -59,6 +59,7 @@ export interface My5PageData {
   createdAt: string;
   views: number;
   clicks: number;
+  likes?: number;
   isOfficial?: boolean;
 }
 
